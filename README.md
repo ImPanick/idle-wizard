@@ -71,6 +71,40 @@ tier, including all categories at once. Each category also has a bulk shortcut.
 Review the count and gold value, then confirm one sale. Equipped gear and crafted
 uniques are kept; socketed gems return to your collection, including single sales.
 
+## Gold investments
+
+- **Spellbook -> Spell refinement:** choose potency (+2% supported effects per
+  rank) or efficiency (-1.5% mana per rank, minimum 1). The choice locks on the
+  first purchase. Ten ranks total; the current limit starts at two and grows by
+  two per unlocked zone. Prices grow by 2.2x per rank. Refinement does not buy
+  mastery or affinity. Bound Tomes preserves it through Awakening.
+- **Equipment -> Artificer:** temper any owned piece for +2% of its original
+  combat stats per rank, up to +20%. Prices grow by 1.8x per rank; the same
+  progression limits apply. Gold/experience bonuses, affinities, and unique
+  effects stay fixed. Improve shortcuts open the selected piece directly.
+- **Artificer -> Add a socket:** buy up to three extra sockets, with eight total
+  per piece, including crafted legendary weapons. Existing gems stay socketed.
+  Each addition costs four times the previous one. More natural sockets and
+  higher tier/rarity make the initial price higher. Review, then confirm.
+- **Manor -> Guild commissions:** prepay material shipments, with three order
+  slots processed sequentially. Dust unlocks first; herbs, crystals, and gem
+  materials open after zones 1, 3, and 5. Deliveries arrive automatically in
+  game time, including while away, and obey the selected game speed.
+
+Refinement and tempering offer **buy max affordable** and one optional automatic
+target each. Their shared gold reserve also protects manual socket purchases.
+Automatic purchases fund Guild repeat orders first, then refinement, then
+tempering. Repeat orders have their own reserve and a total spending allowance;
+only **Apply new allowance** resets the amount spent. All automation starts off.
+
+Awakening pauses automatic investments and refunds unfinished prepaid shipments.
+Bound Wardrobe keeps improved gear. Combining gear consumes its tempering and
+extra sockets; resale values stay fixed, so upgrades are not a gold refund loop.
+Current save codes use **v30** and preserve upgrades, order timers, and spending
+rules. Existing v29 and earlier supported saves still import with these features
+unset. World away combat remains a sustainable estimate; automatic upgrades
+bought during that interval affect subsequent combat, without retroactive kills.
+
 There are **7 palettes**: Field Grimoire, Midnight Grimoire (default), Dark Forest,
 Light Warm, Light Blue, Amber CRT, and High Contrast. Your exported save includes
 the selected palette and density. Reduced motion follows your system preference.
@@ -251,7 +285,7 @@ where you choose.
 current journey. Invalid saves are rejected without partially overwriting your
 character. Codes support Unicode, whitespace, line wrapping, and URL-safe base64.
 
-The current save format is **v29**: UTF-8 JSON encoded as base64. It includes
+The current save format is **v30**: UTF-8 JSON encoded as base64. It includes
 active research, brewing progress, spell cooldowns, mastery, equipment, UI
 preferences, whether Earthward's guard is available or spent, the world's map
 and encounter checkpoint, expedition phases, discoveries, journal choices,
@@ -318,13 +352,17 @@ and deferred Trial transitions. These tests do not claim browser layout,
 cross-browser coverage, or a real overnight device soak. Expansion tests also
 cover school gates, finite spell budgets, inscriptions, save checkpoints,
 shared ritual resources, and all six expedition routes across small steps and
-long catch-up periods.
+long catch-up periods. Investment tests cover capped upgrades, unchanged base
+stats, socket safety, repeat allowances, reserve protection, prepaid refunds,
+and chronological spending across active and away progress. Navigation tests
+cover unreachable targets and a single bounded path search.
 
 Optional authoring fragments live in `dev/`. After editing one, run
 `node dev/embed.cjs` to refresh its section of the HTML. Players only need the
 HTML; neither this utility nor any development files are runtime dependencies.
 `dev/compact.cjs` is an optional release utility that removes core JavaScript
-comments after proving the complete parsed syntax tree is unchanged. Embedded
+comments and redundant whitespace after proving the complete parsed syntax
+tree is unchanged. The HTML uses LF line endings on every platform. Embedded
 authoring fragments and ASCII art remain intact. If more release space is
 needed, install Acorn into the ignored tooling folder and run:
 

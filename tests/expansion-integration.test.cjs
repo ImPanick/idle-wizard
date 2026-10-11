@@ -19,7 +19,7 @@ test('locked enemy labels stay hidden in old checkpoints and Trial previews',()=
 test('v29 round trip retains world clocks, Seeds, paid comets, score and RNG',()=>{
   const g=game();advanced(g);
   g.run(`genMap();G.enemy=G.mobs[0];G.enemy.hp-=1;G.enemy.magic={seeds:[0,2,4],briar:{remaining:8,hits:2,power:25},ledger:null};G.enemy.statuses={soaked:3};G.magic.notes=[{el:'fire',spent:4,damage:10}];G.magic.comets={remaining:3,budget:700,charges:3};G.magic.deferred=[{remaining:3,amount:10}];G.spellCd.spark=1.25;const beforeCheckpoint=worldCheckpoint();const beforeRng=G.rng;const code=exportSave();const decoded=decodeSave(code);G.magic=normalizeMagic();importSave(code);`);
-  assert.equal(g.run('decoded.v'),29);assert.equal(g.run('G.rng'),g.run('beforeRng'));
+  assert.equal(g.run('decoded.v'),30);assert.equal(g.run('G.rng'),g.run('beforeRng'));
   close(g.json('worldCheckpoint()'),g.json('beforeCheckpoint'));
   assert.equal(g.run('G.magic.comets.budget'),700);assert.equal(g.run('G.magic.deferred[0].amount'),10);assert.equal(g.run('G.magic.notes.length'),1);
 });

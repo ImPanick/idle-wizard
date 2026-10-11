@@ -6,16 +6,9 @@
 <title>ASCII Idle Wizard | The field grimoire</title>
 <!-- One document. An entire adventure. Progress belongs to the player. -->
 <style>
-/* Themes -- accents tuned for modern OLED/LCD: avoid pure-saturation primaries
-   that bloom on OLED, keep WCAG AA contrast on body text, and share element
-   + rarity hues across same-mode variants for a consistent visual language.
-   Vars below: bg/panel/panel2/border (chrome), fg/dim (text tiers),
-   hi/hi2 (accents), gold/mana/xp/hp (functional + bar fills), hpbg/xpbg/manabg
-   (bar empty backgrounds), el-* (element identity), chest-*, rar-*, mat-*,
-   map-ground/map-deco (map terrain glyphs), mob (enemy + dmg log),
-   row-divider (subtle list dividers), legendary-glow (rgba box-shadow). */
+
 :root, body[data-theme="dark"]{
-  /* Dark | Purple -- default */
+
   --bg:#0c0c14;--panel:#15151f;--panel2:#1c1c2a;--border:#2a2a3e;
   --fg:#d4d4e8;--dim:#8086a4;--hi:#b89aff;--hi2:#86d8a0;
   --gold:#e8c452;--mana:#6cb8ec;--xp:#86d8a0;--hp:#d8636a;
@@ -30,7 +23,7 @@
   --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
 }
 body[data-theme="darkblue"]{
-  /* Dark | Blue -- cool oceanic accent */
+
   --bg:#0a1220;--panel:#121e30;--panel2:#1a2640;--border:#2c3a55;
   --fg:#cad8ec;--dim:#7a8aa6;--hi:#6cb8ec;--hi2:#88d4d0;
   --gold:#e8c452;--mana:#88d4ec;--xp:#88d4d0;--hp:#d8636a;
@@ -44,7 +37,7 @@ body[data-theme="darkblue"]{
   --row-divider:#202c40;--legendary-glow:rgba(232,196,82,0.22);
 }
 body[data-theme="darkforest"]{
-  /* Dark | Forest -- green accent */
+
   --bg:#0b1612;--panel:#13221a;--panel2:#1b2c22;--border:#2c4034;
   --fg:#cadccd;--dim:#7e9786;--hi:#8acc92;--hi2:#cadc78;
   --gold:#e8c452;--mana:#6cb8ec;--xp:#8acc92;--hp:#d8636a;
@@ -58,7 +51,7 @@ body[data-theme="darkforest"]{
   --row-divider:#1f2c22;--legendary-glow:rgba(232,196,82,0.22);
 }
 body[data-theme="light"]{
-  /* Light | Warm -- paper, purple accent */
+
   --bg:#f8f4ea;--panel:#ffffff;--panel2:#f0ebd8;--border:#c0b294;
   --fg:#1d1a26;--dim:#6c5c44;--hi:#6a3acc;--hi2:#247838;
   --gold:#a4640e;--mana:#1d6ea5;--xp:#247838;--hp:#a82424;
@@ -73,7 +66,7 @@ body[data-theme="light"]{
 }
 body[data-theme="light"] .panel h2{border-bottom-color:#c8b890}
 body[data-theme="lightblue"]{
-  /* Light | Blue -- cool paper, oceanic accent */
+
   --bg:#f0f5fa;--panel:#ffffff;--panel2:#e4eef5;--border:#a8c0d4;
   --fg:#14283a;--dim:#5a7088;--hi:#1d6ea5;--hi2:#247852;
   --gold:#a06410;--mana:#2080b8;--xp:#247852;--hp:#a82424;
@@ -88,7 +81,7 @@ body[data-theme="lightblue"]{
 }
 body[data-theme="lightblue"] .panel h2{border-bottom-color:#bdcad8}
 body[data-theme="amber"]{
-  /* Amber CRT -- toned phosphor */
+
   --bg:#1a1308;--panel:#241b0e;--panel2:#2e2412;--border:#5a4828;
   --fg:#cc9858;--dim:#8a6838;--hi:#dcb068;--hi2:#e8c890;
   --gold:#dcb068;--mana:#c89870;--xp:#d4b870;--hp:#b85030;
@@ -102,7 +95,7 @@ body[data-theme="amber"]{
   --row-divider:#3a2c1a;--legendary-glow:rgba(232,200,144,0.28);
 }
 body[data-theme="contrast"]{
-  /* High Contrast -- accessibility (kept aggressive for readability) */
+
   --bg:#000000;--panel:#080808;--panel2:#1a1a1a;--border:#e8e8e8;
   --fg:#f4f4f4;--dim:#c4c4c4;--hi:#ffe840;--hi2:#5cf05c;
   --gold:#ffe840;--mana:#5ce4ff;--xp:#5cf05c;--hp:#ee3030;
@@ -117,16 +110,13 @@ body[data-theme="contrast"]{
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:13px;line-height:1.35;min-height:100vh;padding:10px}
-/* Subdued ASCII sigil layer behind everything. Low opacity, no pointer events,
-   sits above body bg but below all panels (which have their own solid bg). */
+
 #bg-art{position:fixed;inset:0;margin:0;padding:14px;pointer-events:none;
         user-select:none;overflow:hidden;z-index:0;
         font-family:var(--mono);font-size:22px;line-height:1.35;letter-spacing:6px;
         color:var(--hi);opacity:0.05;white-space:pre}
 .app{position:relative;z-index:1}
-/* Three-column dashboard grid on wide viewports: tab content | live dashboard | log/zones/rank.
-   The dashboard column is *always* visible so the idle heartbeat (rates, next up, target intel)
-   never gets hidden behind a tab switch. Collapses gracefully on narrow widths. */
+
 .app{display:grid;
      grid-template-columns:minmax(340px,1.5fr) minmax(280px,0.85fr) minmax(280px,1fr);
      gap:8px;max-width:var(--app-max,1800px);margin:0 auto;
@@ -134,9 +124,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--mono);font-
 @media(max-width:1400px){
   .app{grid-template-columns:minmax(340px,1.3fr) 1fr;
        grid-template-areas:"top top" "tabs tabs" "left right" "dash dash" "bottom bottom"}
-  /* Below 1400px the dash slides under the two main columns; lay its three
-     panels out side-by-side so it reads as one horizontal heartbeat strip
-     instead of a three-row pile. */
+
   #dash{flex-direction:row;flex-wrap:wrap}
   #dash > .panel{flex:1 1 280px;min-width:0}
 }
@@ -146,9 +134,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--mono);font-
   pre.map{font-size:11px}
 }
 #dash{grid-area:dash;display:flex;flex-direction:column;gap:8px}
-/* Combat log is a contained scroll region -- viewport-relative height so it
-   stays usefully tall on large screens but never expands the page. Scrolls
-   internally. The log-panel itself is sized by its content. */
+
 #right .log-panel{display:flex;flex-direction:column;min-height:0}
 .panel{background:var(--panel);border:1px solid var(--border);padding:8px 10px;overflow:hidden}
 .panel h2{margin:0 0 6px 0;font-size:12px;font-weight:600;color:var(--hi);letter-spacing:.08em;
@@ -213,15 +199,14 @@ pre.map .gem{color:var(--mat-gem);font-weight:700}
 .mat-strip .m.crystal .val{color:var(--mat-crystal);font-weight:700}
 .mat-strip .m.gem .val{color:var(--mat-gem);font-weight:700}
 .mat-strip .m.herb .val{color:var(--mat-herb);font-weight:700}
-/* Ailment cue layer 1 -- hero glyph on the map pulses red when ailing */
+
 pre.map .hero.ailing{color:var(--hp);text-shadow:0 0 8px var(--hp),0 0 16px var(--hp);
                      animation:hero-ailing-pulse 0.8s ease-in-out infinite alternate}
 @keyframes hero-ailing-pulse{
   from{text-shadow:0 0 4px var(--hp);filter:brightness(1.0)}
   to  {text-shadow:0 0 14px var(--hp);filter:brightness(1.4)}
 }
-/* Ailment cue layer 2 -- hero panel border glows red when ailing.
-   Box-shadow color also derives from the active theme's --hp. */
+
 .panel.hero-panel.ailing{border-color:var(--hp);
                          box-shadow:0 0 0 1px var(--hp),0 0 14px color-mix(in srgb, var(--hp) 45%, transparent);
                          animation:panel-ailing-pulse 1.2s ease-in-out infinite alternate}
@@ -229,9 +214,7 @@ pre.map .hero.ailing{color:var(--hp);text-shadow:0 0 8px var(--hp),0 0 16px var(
   from{box-shadow:0 0 0 1px var(--hp),0 0 8px color-mix(in srgb, var(--hp) 30%, transparent)}
   to  {box-shadow:0 0 0 1px var(--hp),0 0 18px color-mix(in srgb, var(--hp) 65%, transparent)}
 }
-/* Ailment cue layer 3 -- buff strip pills for ailments. Background tints
-   are derived from the active theme's --hp via color-mix so light themes
-   don't get a hardcoded dark-theme red wash. */
+
 .buff-strip .ailment{color:var(--hp);border-color:var(--hp);
                      background:color-mix(in srgb, var(--hp) 12%, transparent);
                      animation:ailment-blink 1.6s ease-in-out infinite alternate}
@@ -239,7 +222,7 @@ pre.map .hero.ailing{color:var(--hp);text-shadow:0 0 8px var(--hp),0 0 16px var(
   from{background:color-mix(in srgb, var(--hp) 7%, transparent)}
   to  {background:color-mix(in srgb, var(--hp) 20%, transparent)}
 }
-/* Alchemy panel -- quality row + brew slot styling */
+
 .q-row{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center;
        padding:2px 4px;border-top:1px dotted var(--row-divider);font-size:11px}
 .q-row:first-child{border-top:none}
@@ -253,8 +236,7 @@ pre.map .hero.ailing{color:var(--hp);text-shadow:0 0 8px var(--hp),0 0 16px var(
 .brew-slot.empty .det{color:color-mix(in srgb, var(--hi2) 70%, var(--dim));font-style:italic}
 .brew-slot .nm{color:var(--hi);font-weight:600}
 .brew-slot .det{color:var(--dim);font-size:11px}
-/* Brew progress bar uses the herb material color so it reads as alchemy,
-   distinct from research/crusade/HP bars elsewhere in the UI. */
+
 .bar.brewbar{background:color-mix(in srgb, var(--mat-herb) 18%, var(--xpbg))}
 .bar.brewbar>span{background:var(--mat-herb)}
 .alchemy-skill{padding:6px 8px;background:var(--panel2);border:1px solid var(--border);
@@ -263,17 +245,15 @@ pre.map .hero.ailing{color:var(--hp);text-shadow:0 0 8px var(--hp),0 0 16px var(
 .alchemy-skill .lvl{color:var(--hi);font-weight:700;font-size:13px}
 .alchemy-skill .stats{color:var(--dim);font-size:11px}
 .alchemy-skill .bar.maxed>span{background:var(--gold)}
-/* Any maxed XP/mana/HP bar elsewhere also gold-fills for visual consistency. */
+
 .bar.xpbar.maxed>span,.bar.manabar.maxed>span,.bar.maxed>span{background:var(--gold)}
-/* Respect OS-level motion reduction: ailment pulses keep their red coloring
-   but stop animating. Visual cue still reads as "you are afflicted." */
+
 @media (prefers-reduced-motion: reduce) {
   pre.map .hero.ailing,
   .panel.hero-panel.ailing,
   .buff-strip .ailment { animation: none !important; }
 }
-/* Auto-config controls in the potion cabinet -- bigger hit target than UA defaults
-   so the threshold input and the on/cure toggles are usable on touch screens. */
+
 .auto-cfg{display:inline-flex;align-items:center;gap:6px;padding:4px 6px;
           color:var(--dim);font-size:11px;min-height:28px;
           border:1px solid color-mix(in srgb, var(--border) 70%, transparent);
@@ -352,9 +332,7 @@ textarea.save{width:100%;min-height:60px;background:var(--bg);color:var(--fg);
 .el-group-header .count{color:var(--dim);font-size:11px}
 .el-group-body{padding:4px 8px}
 .el-group.locked .el-group-header{opacity:0.55;cursor:not-allowed}
-/* When an el-group sits as a direct <li> inside a .shop list, the .shop li
-   grid would force its header + body into a 2-column layout. Reset back to
-   block so the header stays a row and the body stacks underneath. */
+
 .shop li.el-group{display:block;padding:0;border-bottom:none;gap:0}
 select.act{background:var(--panel);color:var(--fg);border:1px solid var(--border);
            font-family:var(--mono);font-size:11px;padding:5px 6px;cursor:pointer}
@@ -484,12 +462,8 @@ pre.map .trialBoss{color:var(--gold);font-weight:700}
             justify-content:space-between;align-items:center;cursor:pointer;background:var(--bg)}
 .gem-choice:hover{border-color:var(--hi)}
 
-/* ============================================================
-   IDLE DASHBOARD -- rates, next-up, target intel, spell hotbar
-   ============================================================ */
-/* Resource rail in the top bar -- gold/xp/mana with inline /sec rates.
-   The rate chip is dim until it's nonzero so a freshly started game doesn't
-   look broken showing +0/s everywhere. */
+
+
 #top .res .rate{color:var(--hi2);font-size:10px;margin-left:4px;letter-spacing:.04em}
 #top .res .rate.zero{color:var(--dim);opacity:0.55}
 #top .row2{display:flex;flex-wrap:wrap;gap:10px;width:100%;padding-top:4px;
@@ -500,7 +474,7 @@ pre.map .trialBoss{color:var(--gold);font-weight:700}
 #top .status-chip.warn{color:var(--hp);border-color:var(--hp)}
 #top .status-chip.good{color:var(--hi2);border-color:var(--hi2)}
 #top .status-chip .v{color:var(--fg);font-weight:600}
-/* Rates panel -- the idle heartbeat */
+
 .rates-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
 .rates-grid .row{display:flex;justify-content:space-between;padding:2px 0;
                  border-bottom:1px dotted color-mix(in srgb,var(--border) 60%,transparent);font-size:11px}
@@ -509,7 +483,7 @@ pre.map .trialBoss{color:var(--gold);font-weight:700}
 .rates-grid .v.gain{color:var(--hi2)}
 .rates-grid .v.zero{color:var(--dim);opacity:0.55}
 .rates-window{color:var(--dim);font-size:10px;text-align:right;margin-top:4px;font-style:italic}
-/* Next Up -- the player's near-term goals with countdowns */
+
 .nextup-list{display:flex;flex-direction:column;gap:4px}
 .nextup-row{display:grid;grid-template-columns:auto 1fr auto;gap:6px;
             padding:4px 6px;border:1px solid color-mix(in srgb,var(--border) 70%,transparent);
@@ -520,7 +494,7 @@ pre.map .trialBoss{color:var(--gold);font-weight:700}
 .nextup-row .to-go{color:var(--hi2);font-weight:600;font-size:11px}
 .nextup-row.ready{border-color:var(--hi2)}
 .nextup-row.ready .to-go{color:var(--gold)}
-/* Target Intel -- current enemy at a glance */
+
 .target-intel{display:flex;flex-direction:column;gap:6px;font-size:11px}
 .target-intel .empty{color:var(--dim);font-style:italic;text-align:center;padding:8px 0}
 .target-intel .head{display:flex;justify-content:space-between;align-items:baseline}
@@ -533,7 +507,7 @@ pre.map .trialBoss{color:var(--gold);font-weight:700}
 .target-intel .matchups .mu.strong{color:var(--hi2);border-color:var(--hi2)}
 .target-intel .matchups .mu.weak{color:var(--hp);border-color:var(--hp)}
 .target-intel .drops{color:var(--dim);font-size:10px;font-style:italic}
-/* Persistent spell hotbar -- always visible, surfaces cooldowns + mastery */
+
 .spell-hotbar{display:flex;gap:4px;padding:6px 8px;border:1px solid var(--border);
               background:color-mix(in srgb,var(--panel2) 80%,transparent);
               flex-wrap:wrap;margin-bottom:6px}
@@ -547,8 +521,7 @@ pre.map .trialBoss{color:var(--gold);font-weight:700}
 .spell-hotbar .hk .idx{font-size:9px;color:var(--dim);position:absolute;top:1px;left:3px}
 .spell-hotbar .hk .cdtxt{font-size:9px;color:var(--hp);margin-top:1px;letter-spacing:0.03em}
 .spell-hotbar .hk.ready .cdtxt{color:var(--hi2)}
-/* Stats grid -- sectioned (Combat / Idle), 3 cols, dimmed defaults so the
-   eye locks onto stats that actually changed from baseline. */
+
 .stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px 14px;margin-top:4px}
 .stats-grid div{display:flex;justify-content:space-between;font-size:11px}
 .stats-grid .section{grid-column:1/-1;color:var(--hi);font-size:10px;font-weight:700;
@@ -560,22 +533,22 @@ pre.map .trialBoss{color:var(--gold);font-weight:700}
 .stats-grid div.dim{opacity:0.4}
 .stats-grid .v.up{color:var(--hi2)}
 .stats-grid .v.down{color:var(--hp)}
-/* Zones collapse -- locked tiers fold into a single > row */
+
 .zone-locked-fold{padding:6px 8px;border:1px dashed var(--border);background:var(--bg);
                   color:var(--dim);font-size:11px;cursor:pointer;text-align:left;width:100%;
                   font-family:var(--mono);margin-top:4px}
 .zone-locked-fold:hover{color:var(--fg);border-color:var(--hi)}
 .zone-locked-fold .ct{color:var(--hi);font-weight:700}
-/* Tab grouping -- visual separator between Core / Build / Endgame / Meta */
+
 #tabs .tab-group{font-size:9px;color:var(--dim);letter-spacing:.10em;
                  text-transform:uppercase;padding:2px 4px 0;width:100%;margin-top:2px;
                  border-bottom:1px dashed color-mix(in srgb,var(--border) 50%,transparent)}
 #tabs .tab-group:first-of-type{margin-top:0}
-/* Settings strip tucked behind # -- collapses bottom panel to a single button at rest */
+
 #bottom.collapsed > :not(.btn-settings):not(.spacer):not(.author){display:none}
 #bottom .btn-settings{cursor:pointer}
 #bottom .author{color:var(--dim);font-size:11px;margin-left:auto}
-/* Density toggle -- comfortable (default) vs compact tightens padding everywhere */
+
 body.compact .panel{padding:5px 7px}
 body.compact .panel h2{margin:0 0 4px;font-size:11px;padding-bottom:2px}
 body.compact .bar{height:12px}
@@ -583,13 +556,12 @@ body.compact .stats-grid div{font-size:10px}
 body.compact pre.map{font-size:13px;line-height:0.95}
 body.compact #top{gap:8px}
 body.compact .nextup-row,body.compact .rates-grid .row{padding:1px 4px;font-size:10px}
-/* While-you-were-away offline gains modal */
+
 .afk-summary{padding:6px 0}
 .afk-summary .gain{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted var(--border)}
 .afk-summary .gain .v{color:var(--hi2);font-weight:600}
 
-/* THE FIELD GRIMOIRE -- a quiet terminal for a very long adventure.
-   Everything stays in this document; every theme uses the same token system. */
+
 :root,body[data-theme="dark"]{
   --bg:#0b1210;--panel:#121c18;--panel2:#19261f;--border:#2d4035;
   --fg:#dce4d8;--dim:#91a18f;--hi:#c3d79a;--hi2:#8ec9a7;
@@ -601,7 +573,7 @@ body.compact .nextup-row,body.compact .rates-grid .row{padding:1px 4px;font-size
 html{scroll-behavior:smooth;scroll-padding-top:18px}
 body{padding:24px 28px 16px;font-size:13px;line-height:1.55}
 button,input,select,textarea{font:inherit}
-/* ASCII stays one glyph per character, even in fonts with programming ligatures. */
+
 body,body *{font-variant-ligatures:none;font-feature-settings:"liga" 0,"clig" 0,"calt" 0;font-kerning:none}
 button,select,summary{touch-action:manipulation}
 button{transition:border-color .15s,background-color .15s,color .15s}
@@ -859,7 +831,7 @@ body.compact .building-row,body.compact .inv-item,body.compact .spell-row{paddin
   .mobile-tab-btn.active{background:var(--panel2);color:var(--hi);border-color:var(--border)}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
-/* Portrait encounters: printable ASCII carries the illustration; CSS carries borders. */
+
 body[data-theme="darkblue"]{--bg:#0d101c;--panel:#141827;--panel2:#1c2233;--border:#777c83;--fg:#efe6cc;--dim:#b4ae9e;--hi:#e8d8aa;--hi2:#a8d5bd;--row-divider:#343948;--map-ground:#353c50;--map-deco:#647085}
 :root{--el-nature:#a8d5a5;--el-resonance:#d9c29a;--el-chaos:#edacbb;--el-cosmic:#aabfee}
 body[data-theme^="light"]{--el-nature:#28713c;--el-resonance:#795818;--el-chaos:#a52563;--el-cosmic:#365caa}
@@ -1175,6 +1147,8 @@ button,select,summary,.el-group-header,.auto-cfg{min-height:44px!important}butto
   <footer id="bottom" class="panel collapsed">
     <button class="act btn-settings" id="btn-settings" title="Appearance and game settings" aria-expanded="false">[::] Settings</button>
     <button class="act" id="btn-density-toggle" title="Toggle between comfortable and compact layout">Density</button>
+    <label class="sub" for="speed-select">Game speed <select class="act" id="speed-select"><option>1x</option></select></label>
+    <span class="sub" id="speed-help">Choose your pace. Included in exported saves.</span>
     <button class="act danger" id="btn-reset">Start over</button>
     <span class="spacer"></span>
     <label class="sub">Palette <select class="act" id="theme-select">
@@ -1204,6 +1178,7 @@ button,select,summary,.el-group-header,.auto-cfg{min-height:44px!important}butto
 const TICK_MS=250, TICK_S=TICK_MS/1000;
 const MAP_W=38, MAP_H=14;
 const IDLE_CAP_HOURS=12;
+const GAME_SPEEDS=Object.freeze([1,2,4,8,16,32,64,128,256]);
 const RESPAWN_PENALTY=0.10;
 const DUNGEON_CHANCE=0.015;  // ~1.5% per level-up roll, clear-on-claim
 
@@ -2017,7 +1992,7 @@ const G={
          _lastSnapGold:0,_lastSnapXp:0,_lastSnapT:0,_windowStart:0},
   // UI preferences (density, settings strip open state, last-saved wall-clock).
   ui:{density:'comfortable',settingsOpen:false},
-  savedAt:0,    // wall-clock ms of last export -- drives the "while you were away" modal
+  speed:1,savedAt:0,
 };
 BUILDINGS.forEach(b=>G.buildings[b.id]=0);
 
@@ -2145,18 +2120,24 @@ function recordRates(){
   if(!r._windowStart)r._windowStart=now;
   const xp=totalLifetimeXp();
   const dX=xp-r._lastSnapXp;
-  if(dX>0)r.xpDelta60.push({t:now,amt:dX});
+  if(dX>0)addRate('xpDelta60',dX);
   r._lastSnapGold=G.gold;
   r._lastSnapXp=xp;
   r._lastSnapT=now;
   r.goldDelta60=r.goldDelta60.filter(s=>s.t>cutoff);
   r.xpDelta60=r.xpDelta60.filter(s=>s.t>cutoff);
-  r.killTimes60=r.killTimes60.filter(t=>t>cutoff);
+  r.killTimes60=r.killTimes60.filter(s=>s.t>cutoff);
   r.dmgDealt60=r.dmgDealt60.filter(s=>s.t>cutoff);
+}
+function addRate(key,amount=1){
+  if(!(amount>0))return;
+  const a=G.rates[key],t=Date.now(),last=a[a.length-1];
+  if(last&&Math.floor(last.t/250)===Math.floor(t/250))last.amt+=amount;
+  else{a.push({t,amt:amount});if(a.length>241)a.shift();}
 }
 function earnGold(amount){
   G.gold+=amount;
-  if(amount>0)G.rates.goldDelta60.push({t:Date.now(),amt:amount});
+  addRate('goldDelta60',amount);
 }
 // Convenience: derive per-second / per-minute readouts from the rolling window.
 // Uses min(60s, since-window-start) so freshly-started sessions don't divide
@@ -2171,7 +2152,7 @@ function currentRates(){
   return {
     goldPerSec:goldSum/sec,
     xpPerSec:xpSum/sec,
-    killsPerMin:(r.killTimes60.length/sec)*60,
+    killsPerMin:r.killTimes60.reduce((sum,e)=>sum+e.amt,0)/sec*60,
     dps:dmgSum/sec,
     windowSec:sec|0,
   };
@@ -3235,6 +3216,7 @@ function enterTrial(){
 }
 function exitTrial(reason='returned'){
   if(!G.trial.inTrial)return;
+  _pendingTrialTransition=null;
   G.trial.inTrial=false;
   if(G.trial.trialReturn){
     G.zoneIdx=G.trial.trialReturn.zoneIdx;
@@ -3285,8 +3267,11 @@ function onTrialBossKilled(){
       if(G.trial!==trial||!trial.inTrial||trial.trialReturn!==returnState
         ||trial.floor!==nextFloor||G.enemy||G.mobs.length!==0)return;
       if(document.hidden||_pageHidden||_loopSuspended){_pendingTrialTransition=advance;return;}
+      if(advance.delay>0)return;
+      if(_pendingTrialTransition===advance)_pendingTrialTransition=null;
       spawnTrialBoss();
     };
+    advance.delay=.6;_pendingTrialTransition=advance;
     setTimeout(advance,600);
   }
 }
@@ -3413,7 +3398,7 @@ function engage(mob){
 function dealDamage(target,amount){
   const actual=Math.min(Math.max(0,target.hp),Math.max(0,amount));
   target.hp-=actual;
-  if(actual>0)G.rates.dmgDealt60.push({t:Date.now(),amt:actual});
+  addRate('dmgDealt60',actual);
   return actual;
 }
 function spellHealAmount(sp){
@@ -3743,7 +3728,7 @@ function settleDefeatedEnemies(candidates){
     const gold=Math.ceil(e.ref.gold*s.goldFind*rm);
     const xp=Math.ceil(e.ref.xp*s.xpMul*rm);
     earnGold(gold);G.hero.xp+=xp;
-    G.rates.killTimes60.push(Date.now());
+    addRate('killTimes60');
     G.loot.push({x:e.x,y:e.y,ttl:8,name:e.ref.name,gold,xp});
     logLine(`Slain: ${e.ref.name}. +${fmtG(gold)} +${fmt(xp)}xp`,'loot');
     if(gameRandom()<0.4){G.materials.dust+=1+ri(0,G.zoneIdx+1);}
@@ -4666,10 +4651,11 @@ function clearOfflineGains(restoreFocus=false){
   if(restoreFocus&&prior?.isConnected)prior.focus();
 }
 function showOfflineGains(summary){
-  if(!summary||summary.seconds<60)return;
+  if(!summary||(summary.wallSeconds??summary.seconds)<60)return;
   if(!_pendingOfflineGains)_pendingOfflineGains={seconds:0,gold:0,xp:0,kills:0,materials:{}};
   const totals=_pendingOfflineGains;
   for(const key of ['seconds','gold','xp','kills'])totals[key]+=summary[key]||0;
+  totals.wallSeconds=(totals.wallSeconds||0)+(summary.wallSeconds??summary.seconds);
   for(const [material,amount] of Object.entries(summary.materials||{}))
     totals.materials[material]=(totals.materials[material]||0)+amount;
   if(summary.estimateNote)totals.estimateNote=summary.estimateNote;
@@ -4709,7 +4695,7 @@ function renderOfflineGains(){
   _offlineReportDirty=false;
   const mats=Object.entries(totals.materials).filter(([_,v])=>v>0)
     .map(([k,v])=>`<div class="gain"><span class="lbl">${asciiHTML(k)}</span><span class="v">+${fmt(Math.floor(v))}</span></div>`).join('');
-  pending.content.innerHTML=`<div class="sub" style="margin-bottom:8px">Idle: ${fmtTime(totals.seconds)} (each absence capped at ${IDLE_CAP_HOURS}h)</div>
+  pending.content.innerHTML=`<div class="sub" style="margin-bottom:8px">Away: ${fmtTime(totals.wallSeconds)} | Progress: ${fmtTime(totals.seconds)} game time (each absence capped at ${IDLE_CAP_HOURS} game hours)</div>
     <div class="afk-summary">
       <div class="gain"><span class="lbl">Gold</span><span class="v">+${fmtG(totals.gold)}</span></div>
       <div class="gain"><span class="lbl">XP</span><span class="v">+${fmt(totals.xp)}</span></div>
@@ -4749,7 +4735,7 @@ function b64ToUtf8(s){
 function exportSave(){
   settleClockForAction();
   const d={
-    v:29,
+    v:29,speed:gameSpeed(),clockDebt:Math.min(_tickAccumulator,IDLE_CAP_HOURS*3600),
     rng:G.rng??123456789,magic:G.magic,expeditions:G.expeditions,world:worldCheckpoint(),
     gold:G.gold, spark:G.spark, materials:G.materials,
     hero:{lvl:G.hero.lvl,xp:G.hero.xp,hp:G.hero.hp,mana:G.hero.mana,alive:G.hero.alive,respawnIn:G.hero.respawnIn,ailments:G.hero.ailments||[]},
@@ -5022,6 +5008,7 @@ function buildImportedState(d,now=Date.now()){
     eclipseSeen:d.eclipseSeen===true,baseStats:{},
     rates:{goldDelta60:[],xpDelta60:[],killTimes60:[],dmgDealt60:[],_lastSnapGold:0,_lastSnapXp:0,_lastSnapT:now,_windowStart:now},
     ui:{density:ui.density==='compact'?'compact':'comfortable',settingsOpen:ui.settingsOpen===true,zonesExpanded:ui.zonesExpanded===true,worldView:ui.worldView==='map'?'map':'scene',spellSchool:ELEMENTS.includes(ui.spellSchool)?ui.spellSchool:'all',spellMode:['all','known','learnable','target','ritual'].includes(ui.spellMode)?ui.spellMode:'all'},
+    speed:GAME_SPEEDS.includes(d.speed)?d.speed:1,
     savedAt:Math.min(now,num(d.savedAt,now,'save date',8640000000000000)),
   };
   state.rng=num(d.rng,123456789,'random state',4294967295,0,true);
@@ -5034,7 +5021,7 @@ function buildImportedState(d,now=Date.now()){
   if(!schoolUnlocked('cosmic',state)){state.magic.comets=null;state.magic.link=null;state.magic.redshift=null;}
   state.equippedSpells=state.equippedSpells.map(id=>id&&schoolUnlocked(SPELLS.find(s=>s.id===id)?.element,state)?id:null);
   const world=version>=29?normalizeWorld(d.world,state):null;
-  return {state,version,legacy,gearIdCounter,savedAt:state.savedAt,world};
+  return {state,version,legacy,gearIdCounter,savedAt:state.savedAt,world,clockDebt:num(d.clockDebt,0,'pending game time',IDLE_CAP_HOURS*3600)};
 }
 function importSave(str){
   lastSaveError='';importSave.lastError='';
@@ -5055,7 +5042,8 @@ function importSave(str){
     if(Object.values(G.baseStats).some(v=>typeof v==='number'&&!Number.isFinite(v)))throw Error('Character stats exceed supported limits.');
     restoreWorld(save.world);
     const elapsed=Math.max(0,Math.floor((Date.now()-save.savedAt)/1000));
-    const summary=applyIdle(elapsed);
+    const debt=save.clockDebt-save.clockDebt%TICK_S;
+    const summary=applyAway(elapsed,debt);
     G.rates._lastSnapGold=G.gold;
     G.rates._lastSnapXp=totalLifetimeXp();
     G.rates._lastSnapT=G.rates._windowStart=Date.now();
@@ -5064,12 +5052,14 @@ function importSave(str){
     if($('inv-sort'))$('inv-sort').value=G.uiInvSort;
     document.body.classList.toggle('compact',G.ui.density==='compact');
     if($('bottom'))$('bottom').classList.toggle('collapsed',!G.ui.settingsOpen);
+    renderGameSpeed();
     if(typeof resetGameClock==='function')resetGameClock();
+    _tickAccumulator=save.clockDebt-debt;
     if(save.legacy)logLine(`Pre-v5 save (v${save.version}): old wardrobe, gems and legendaries reset; other progress preserved.`,'sys');
     if(save.version<27)logLine('Progress migrated to the new level curve; your level and next-level progress are preserved.','sys');
     logLine('Save imported.','sys');
     clearOfflineGains();
-    if(summary&&summary.seconds>=60)showOfflineGains(summary);
+    showOfflineGains(summary);
     return true;
   }catch(e){
     if(committed){
@@ -5324,8 +5314,8 @@ function renderRates(){
     ['xp',           fmtRate(r.xpPerSec),      r.xpPerSec>0],
     ['kills /min',   fmtRate(r.killsPerMin,''),r.killsPerMin>0],
     ['dps',          fmtRate(r.dps,''),        r.dps>0],
-    ['mana regen',   `${(G.baseStats.manaRegen||0).toFixed(1)}/s`,(G.baseStats.manaRegen||0)>0],
-    ['g/sec idle',   `${fmt(G.baseStats.goldPerSec||0)}/s`, (G.baseStats.goldPerSec||0)>0],
+    ['mana regen',   `${((G.baseStats.manaRegen||0)*gameSpeed()).toFixed(1)}/s`,(G.baseStats.manaRegen||0)>0],
+    ['g/sec idle',   `${fmt((G.baseStats.goldPerSec||0)*gameSpeed())}/s`, (G.baseStats.goldPerSec||0)>0],
   ];
   $('rates-grid').innerHTML=rows.map(([lbl,v,active])=>
     `<div class="row"><span class="lbl">${lbl}</span><span class="v ${active?'gain':'zero'}">${v}</span></div>`
@@ -6935,12 +6925,15 @@ function renderAll(){renderHot();renderCold();}
 // ============================================================
 function simulationTick(){
   G.tick++;
+  if(_pendingTrialTransition){
+    const advance=_pendingTrialTransition;advance.delay-=TICK_S;
+    if(advance.delay<=0){_pendingTrialTransition=null;advance();}
+  }
   advanceLegacyCrusade(Date.now());
   if(expeditionActive()){
     const result=advanceExpedition(TICK_S);
     if(result?.unusedSeconds>0&&!expeditionActive())advanceAssignmentResources(result.unusedSeconds);
-    if(G.tick%4===0)recordRates();
-    if(_renderPause>0)_renderPause--;
+    if(Date.now()-G.rates._lastSnapT>=1000)recordRates();
     return;
   }
   tickMagic(TICK_S);
@@ -6981,12 +6974,11 @@ function simulationTick(){
   tickGolems();tickResearch();tickRitual();tickBrew();tickAutoConsume();
   if(G.tick%4===0)tryAutoBrew();
   // Roll the idle-rates window forward once per real-world second (TICK_S=0.25).
-  if(G.tick%4===0)recordRates();
-  if(_renderPause>0)_renderPause--;
+  if(Date.now()-G.rates._lastSnapT>=1000)recordRates();
 }
 let _lastTickAt=Date.now(),_tickAccumulator=0;
 let _gameTimer=null,_timerGeneration=0,_loopSuspended=false,_pageHidden=false,_lifecycleBound=false,_renderOnResume=false,_bgArtNeedsRender=false,_pendingTrialTransition=null;
-const MAX_CATCHUP_STEPS=20; // At most five seconds of simulation in one callback.
+const MAX_CATCHUP_STEPS=20;
 function resetGameClock(){_lastTickAt=Date.now();_tickAccumulator=0;_pendingTrialTransition=null;}
 function stopGameLoop(){
   if(_gameTimer!==null)clearInterval(_gameTimer);
@@ -7028,29 +7020,31 @@ function gameTick(){
   const now=Date.now();
   const elapsed=Math.max(0,(now-_lastTickAt)/1000);
   _lastTickAt=now;
-  _tickAccumulator+=elapsed;
+  _renderPause=Math.max(0,_renderPause-elapsed/TICK_S);
   let changed=false;
-  if(_tickAccumulator>60){
+  if(elapsed>60){
     // Claim this interval before doing work, so repeated resume events cannot
     // apply it twice. The idle estimator caps rewards at twelve hours.
-    const pending=_tickAccumulator;_tickAccumulator=0;
+    const debt=_tickAccumulator;_tickAccumulator=0;
     if(G.inDungeon)exitDungeon('closed during your absence');
     if(G.trial.inTrial)exitTrial('paused during your absence');
-    const summary=applyIdle(pending);
+    const summary=applyAway(elapsed,debt);
     if(!G.hero.alive)respawn();
     G.rates={goldDelta60:[],xpDelta60:[],killTimes60:[],dmgDealt60:[],
       _lastSnapGold:G.gold,_lastSnapXp:totalLifetimeXp(),_lastSnapT:now,_windowStart:now};
     showOfflineGains(summary);
     changed=true;
   }else{
+    accrueGameTime(elapsed);
     let steps=0;
-    while(_tickAccumulator>=TICK_S&&steps<MAX_CATCHUP_STEPS){
+    const limit=Math.max(MAX_CATCHUP_STEPS,gameSpeed()*4);
+    while(_tickAccumulator>=TICK_S&&steps<limit){
       simulationTick();_tickAccumulator-=TICK_S;steps++;
     }
     // A short stall retains ordinary combat semantics without a 240-step burst.
     changed=steps>0;
   }
-  if(_pendingTrialTransition){
+  if(_pendingTrialTransition&&_pendingTrialTransition.delay===undefined){
     const advance=_pendingTrialTransition;_pendingTrialTransition=null;
     advance();
   }
@@ -7170,6 +7164,9 @@ function bindEvents(){
     logLine(`Density: ${G.ui.density}.`,'sys');
   };
   $('theme-select').value=G.theme||'dark';
+  $('speed-select').innerHTML=GAME_SPEEDS.map(n=>`<option value="${n}">${n}x</option>`).join('');
+  $('speed-select').onchange=e=>setGameSpeed(Number(e.target.value));
+  renderGameSpeed();
   $('theme-select').onchange=e=>{applyTheme(e.target.value);};
   $('inv-sort').value=G.uiInvSort||'rarity';
   $('inv-sort').onchange=e=>{G.uiInvSort=e.target.value;renderGear();};
@@ -7530,14 +7527,29 @@ function gameRandom(){
 }
 function settleClockForAction(){
   if(document.hidden||_pageHidden||_loopSuspended)return;
-  const now=Date.now(),elapsed=Math.max(0,(now-_lastTickAt)/1000)+_tickAccumulator;
-  _lastTickAt=now;_tickAccumulator=0;
-  if(elapsed>60)showOfflineGains(applyIdle(elapsed));
-  else{
-    let rest=elapsed;
-    while(rest>=TICK_S){simulationTick();rest-=TICK_S;}
-    _tickAccumulator=rest;
-  }
+  gameTick();
+}
+function gameSpeed(){return GAME_SPEEDS.includes(G.speed)?G.speed:1;}
+function shiftLegacyClock(seconds){
+  const c=G.expeditions?.legacyClaim;
+  if(c)c.deadline=Math.max(0,c.deadline-seconds*(gameSpeed()-1)*1000);
+}
+function accrueGameTime(seconds){shiftLegacyClock(seconds);_tickAccumulator+=seconds*gameSpeed();}
+function applyAway(seconds,debt=0){
+  shiftLegacyClock(seconds);
+  const summary=applyIdle(seconds*gameSpeed()+debt);
+  if(summary){summary.wallSeconds=seconds;summary.speed=gameSpeed();}
+  return summary;
+}
+function setGameSpeed(value){
+  if(!GAME_SPEEDS.includes(value))return false;
+  settleClockForAction();G.speed=value;renderGameSpeed();return true;
+}
+function renderGameSpeed(){
+  const speed=gameSpeed(),select=$('speed-select'),help=$('speed-help'),button=$('btn-settings');
+  if(select)select.value=String(speed);
+  if(button)button.textContent=`[::] Settings | ${speed}x`;
+  if(help)help.textContent=`1 real second = ${speed} game second${speed===1?'':'s'}. Timers show game time. Away progress is capped at 12 game hours per absence. Export to keep your journey and speed.`;
 }
 function advanceAssignmentResources(seconds,flow={}){
   if(seconds<=0)return;

@@ -152,9 +152,9 @@ test('Soul Drain harvests at most two seconds from each DoT and leeches actual t
 test('Soul Drain cannot leech the unspent damage of a dying target', () => {
   const { run } = game();
   run(`const target=mob(5,5);cast('curse',target);target.hp=2;
-    G.hero.hp=1;const beforeRates=G.rates.dmgDealt60.length;cast('souldrain',target);`);
+    G.hero.hp=1;const beforeRates=G.rates.dmgDealt60.reduce((sum,e)=>sum+e.amt,0);cast('souldrain',target);`);
   assert.equal(run('G.hero.hp'), 2);
-  assert.equal(run('G.rates.dmgDealt60.slice(beforeRates).reduce((sum,e)=>sum+e.amt,0)'), 2);
+  assert.equal(run('G.rates.dmgDealt60.reduce((sum,e)=>sum+e.amt,0)-beforeRates'), 2);
 });
 
 test('Conduct consumes only the primary Soaked condition and cannot recurse through neighbors', () => {
@@ -218,7 +218,7 @@ test('secondary deaths reward once without clearing the active primary encounter
   assert.equal(run('G.mobs.includes(side)'), false);
   assert.equal(run('after'), 10);
   assert.equal(run('G.gold'), 10);
-  assert.equal(run('G.rates.killTimes60.length'), 1);
+  assert.equal(run('G.rates.killTimes60.reduce((sum,e)=>sum+e.amt,0)'), 1);
 });
 
 test('a lethal area cast resolves every victim before a boss replaces the map mobs', () => {
@@ -227,7 +227,7 @@ test('a lethal area cast resolves every victim before a boss replaces the map mo
     const primary=mob(5,5,1),side=mob(6,5,1);primary.ref.gold=10;side.ref.gold=20;
     G.enemy=primary;cast('tidalwave',primary);`);
   assert.equal(run('G.gold'), 30);
-  assert.equal(run('G.rates.killTimes60.length'), 2);
+  assert.equal(run('G.rates.killTimes60.reduce((sum,e)=>sum+e.amt,0)'), 2);
   assert.equal(run('G.mobs.filter(e=>e.isBoss).length'), 1);
   assert.equal(run('G.mobs.includes(primary)||G.mobs.includes(side)'), false);
   assert.equal(run('G.enemy'), null);

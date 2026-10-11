@@ -39,7 +39,7 @@ test('repeated background rewards share one stable dialog and add up until dismi
   assert.equal(page.document.body.children[0],wrapper);
   assert.equal(wrapper.children[0].children[2].children[0],continueButton);
   assert.deepEqual(JSON.parse(page.run('JSON.stringify(_pendingOfflineGains)')),
-    {seconds:300,gold:40,xp:60,kills:5,materials:{dust:3.5,crystal:1},estimateNote:'Single-target estimate.'});
+    {seconds:300,wallSeconds:300,gold:40,xp:60,kills:5,materials:{dust:3.5,crystal:1},estimateNote:'Single-target estimate.'});
   assert.match(wrapper.children[0].children[1].innerHTML,/Single-target estimate\./);
   continueButton.onclick();
   assert.equal(page.document.body.children.length,0);

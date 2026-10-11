@@ -177,10 +177,12 @@ test('a delayed trial respawn cannot replace the boss in a resumed run', () => {
 });
 
 test('a pending trial transition spawns the next floor in its original run', () => {
-  const { run } = game();
+  const { run, advanceTime } = game();
   run(`const callbacks=[];setTimeout=fn=>callbacks.push(fn);
     G.hero.lvl=16;recomputeStats();genMap();enterTrial();
     onEnemyDead(G.mobs[0]);callbacks[0]();`);
+  assert.equal(run('G.mobs.length'),0);
+  advanceTime(750);run('gameTick();callbacks[0]();');
   assert.equal(run('G.trial.floor'), 2);
   assert.equal(run('G.mobs.length'), 1);
   assert.match(run('G.mobs[0].ref.name'), /F2$/);

@@ -45,6 +45,16 @@ Fourteen detailed character and creature portraits and six illustrated
 expedition scenes use plain ASCII. Each drawing keeps its character alignment
 as a single centered block, including on narrow screens.
 
+**Choose your pace:** Settings offers 1x, 2x, 4x, 8x, 16x, 32x, 64x, 128x,
+and 256x game speed from the start. Combat, movement, Trials, expeditions,
+research, brewing, rituals, and passive production all accelerate. The screen
+updates at its usual pace. Your speed survives Awakening and manual save
+export/import; older saves start at 1x. Away progress also uses the saved speed,
+with the existing limit of **12 game hours per absence**. The recap shows real
+time away separately from credited game time. Countdown timers show game time;
+the Pulse shows rates per real second. Acceleration is a player choice,
+including when rebuilding progress after losing a save.
+
 | Chapter | Contents |
 |---|---|
 | Adventure | Encounter portraits and map, atlas, Pinnacle Trials, six Expeditions, Journal |

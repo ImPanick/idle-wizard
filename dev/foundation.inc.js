@@ -17,14 +17,29 @@ function gameRandom(){
 }
 function settleClockForAction(){
   if(document.hidden||_pageHidden||_loopSuspended)return;
-  const now=Date.now(),elapsed=Math.max(0,(now-_lastTickAt)/1000)+_tickAccumulator;
-  _lastTickAt=now;_tickAccumulator=0;
-  if(elapsed>60)showOfflineGains(applyIdle(elapsed));
-  else{
-    let rest=elapsed;
-    while(rest>=TICK_S){simulationTick();rest-=TICK_S;}
-    _tickAccumulator=rest;
-  }
+  gameTick();
+}
+function gameSpeed(){return GAME_SPEEDS.includes(G.speed)?G.speed:1;}
+function shiftLegacyClock(seconds){
+  const c=G.expeditions?.legacyClaim;
+  if(c)c.deadline=Math.max(0,c.deadline-seconds*(gameSpeed()-1)*1000);
+}
+function accrueGameTime(seconds){shiftLegacyClock(seconds);_tickAccumulator+=seconds*gameSpeed();}
+function applyAway(seconds,debt=0){
+  shiftLegacyClock(seconds);
+  const summary=applyIdle(seconds*gameSpeed()+debt);
+  if(summary){summary.wallSeconds=seconds;summary.speed=gameSpeed();}
+  return summary;
+}
+function setGameSpeed(value){
+  if(!GAME_SPEEDS.includes(value))return false;
+  settleClockForAction();G.speed=value;renderGameSpeed();return true;
+}
+function renderGameSpeed(){
+  const speed=gameSpeed(),select=$('speed-select'),help=$('speed-help'),button=$('btn-settings');
+  if(select)select.value=String(speed);
+  if(button)button.textContent=`[::] Settings | ${speed}x`;
+  if(help)help.textContent=`1 real second = ${speed} game second${speed===1?'':'s'}. Timers show game time. Away progress is capped at 12 game hours per absence. Export to keep your journey and speed.`;
 }
 function advanceAssignmentResources(seconds,flow={}){
   if(seconds<=0)return;

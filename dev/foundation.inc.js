@@ -4,7 +4,8 @@ function inventoryRoom(){
   if(G.gearInventory.length<GEAR_CAPACITY)return true;
   logLine('Inventory full (5000). Salvage or combine items to make room.','sys');return false;
 }
-function storeGear(item){
+function storeGear(item,allowAutoSell=false){
+  if(allowAutoSell===true&&autoSellLoot(item))return false;
   if(G.gearInventory.length<GEAR_CAPACITY){G.gearInventory.push(item);return true;}
   if(item.legendary)return false;
   const dust=10*(item.tier+1)*(RARITY_ORDER.indexOf(item.rarity)+1);

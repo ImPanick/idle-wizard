@@ -268,6 +268,26 @@ New ordinary gear drops at a full 5,000-item inventory turn into dust. Paid
 crafting and manual unequipping require space; older oversized inventories stay
 intact on import. Save codes and imported files accept up to 32 MiB.
 
+### Idle inventory care
+
+In **Equipment -> Auto-sell loot**, choose tiers and rarities, then enable the
+rule. New loot must match both selections. Existing inventory stays available;
+equipped gear and crafted uniques are protected, and socketed gems are returned.
+Rules start disabled, survive Awakening, and travel in exported save codes.
+Older codes without rules import with auto-sell disabled. Sales are summarized
+in the Chronicle without creating a message for each item.
+
+Selling an individual socketed item opens three choices: **Sell with gems**
+permanently discards its gems for the displayed gear price; **Retrieve gems and
+sell** returns them; **Cancel** keeps the item. Bulk sales always return gems.
+
+Under **Gem collection -> Manage spare gems**, filter loose gems by type and
+level, choose a reserve per type and level, and review a sale or salvage.
+The default reserve of two keeps a combining pair; zero clears the selected
+loose stacks. Socketed gems stay intact. Selling pays gold; salvage pays dust
+and, for L3-L5 gems, crystal. Confirmation covers the reviewed quantity, so new
+idle finds are kept until a later review.
+
 ## Footprint and development
 
 | Resource | Game requirement |
@@ -303,6 +323,16 @@ long catch-up periods.
 Optional authoring fragments live in `dev/`. After editing one, run
 `node dev/embed.cjs` to refresh its section of the HTML. Players only need the
 HTML; neither this utility nor any development files are runtime dependencies.
+`dev/compact.cjs` is an optional release utility that removes core JavaScript
+comments after proving the complete parsed syntax tree is unchanged. Embedded
+authoring fragments and ASCII art remain intact. If more release space is
+needed, install Acorn into the ignored tooling folder and run:
+
+```sh
+npm install --prefix artifacts/release-tools --no-audit --no-fund --ignore-scripts --save-exact acorn@8.14.1
+node dev/compact.cjs artifacts/release-tools/node_modules/acorn
+```
+
 See [the expansion blueprint](docs/EXPANSION_PLAN.md) for the design and the
 twelve reserve spells that remain candidates for a future release.
 

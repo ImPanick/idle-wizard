@@ -675,6 +675,9 @@ kbd{font-size:10px;padding:2px 4px}
 .utility-fold>summary{list-style:none;cursor:pointer}
 #bulk-sale{margin:8px 0;padding:8px;border:1px solid var(--border)}
 #bulk-sale summary{margin-bottom:6px}
+#gem-cleanup{margin:8px 0;padding:8px;border:1px solid var(--border)}
+#gem-cleanup summary{margin-bottom:6px}
+#gem-clean-keep{width:80px;background:var(--bg);color:var(--fg);border:1px solid var(--border);padding:6px;font:inherit}
 .utility-fold>summary::-webkit-details-marker{display:none}
 .utility-fold>summary h2{border:0;padding:0;margin:0}
 .utility-fold[open]>summary h2{border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:12px}
@@ -1034,6 +1037,10 @@ button,select,summary,.el-group-header,.auto-cfg{min-height:44px!important}butto
         </details>
         <ul class="shop" id="inventory-list"></ul>
       </div>
+      <details class="panel utility-fold" id="auto-sell-panel">
+        <summary><h2>Auto-sell loot <span class="sub" id="auto-sell-status">Off</span></h2></summary>
+        <div id="auto-sell-controls"></div>
+      </details>
       <details class="panel utility-fold">
         <summary><h2>Combine equipment <span class="sub">2 matching pieces -> next rarity</span></h2></summary>
         <div id="mat-strip-forge"></div>
@@ -1041,6 +1048,17 @@ button,select,summary,.el-group-header,.auto-cfg{min-height:44px!important}butto
       </details>
       <details class="panel utility-fold">
         <summary><h2>Gem collection <span class="sub" id="gem-summary"></span></h2></summary>
+        <details class="utility-fold" id="gem-cleanup">
+          <summary class="title">Manage spare gems</summary>
+          <div class="row">
+            <label class="sub">Type <select class="act" id="gem-clean-type"></select></label>
+            <label class="sub">Level <select class="act" id="gem-clean-level"></select></label>
+            <label class="sub">Keep <input type="number" id="gem-clean-keep" min="0" max="999999" step="1" value="2"></label>
+            <label class="sub">Action <select class="act" id="gem-clean-mode"><option value="sell">Sell for gold</option><option value="salvage">Salvage for materials</option></select></label>
+          </div>
+          <p class="sub">Reserve applies to each type and level. Socketed gems are kept. Keep two for a combining pair, or set zero to clear the selected loose gems.</p>
+          <div class="row"><span id="gem-clean-preview" class="sub" role="status"></span><button id="gem-clean-confirm" class="act warn">Review gems</button><button id="gem-clean-cancel" class="act" hidden>Cancel</button></div>
+        </details>
         <div id="gem-list"></div>
       </details>
     </div>
@@ -1178,35 +1196,35 @@ button,select,summary,.el-group-header,.auto-cfg{min-height:44px!important}butto
 </div>
 
 <script>
-// ============================================================
-// ASCII IDLE WIZARD -- v27
-// One self-contained document. State lives in memory; export/import is explicit.
-// Tables define content, simulationTick advances one fixed step, gameTick accounts
-// for elapsed time, and render functions project state into the ASCII interface.
-// Historical changes remain in Git. Mechanics checks: node --test tests/*.test.cjs
-// ============================================================
-// CONFIG
-// ============================================================
+
+
+
+
+
+
+
+
+
 const TICK_MS=250, TICK_S=TICK_MS/1000;
 const MAP_W=38, MAP_H=14;
 const IDLE_CAP_HOURS=12;
 const GAME_SPEEDS=Object.freeze([1,2,4,8,16,32,64,128,256]);
 const RESPAWN_PENALTY=0.10;
-const DUNGEON_CHANCE=0.015;  // ~1.5% per level-up roll, clear-on-claim
+const DUNGEON_CHANCE=0.015;
 
-// XP follows the rewards of the world rather than compounding forever at 32%.
-// At a zone's suggested level the next level takes roughly 2-20 ordinary kills
-// before bonuses. Log interpolation makes every intervening level more costly.
+
+
+
 const LEVEL_XP_MILESTONES=[
   [1,10],[4,40],[9,160],[16,640],[24,2400],[36,9000],
   [50,32000],[70,110000],[95,380000],[130,1300000],[160,3000000],
 ];
 const AWAKEN_LEVEL=24;
-const AWAKEN_ZONE=3; // Ember Drake defeated, Tideglass unlocked this run.
+const AWAKEN_ZONE=3;
 
-// ============================================================
-// ELEMENTS
-// ============================================================
+
+
+
 const ELEMENTS=['fire','water','earth','air','light','shadow','blood','arcane'];
 const EL_INFO={
   fire:{name:'Fire',glyph:'✦',desc:'Raw damage, burn.'},
@@ -1226,7 +1244,7 @@ const EL_MATCHUP={
   light:{strong:'shadow',weak:'blood'},
   shadow:{strong:'light',weak:null},
   blood:{strong:null,weak:'light'},
-  arcane:{strong:null,weak:null},  // cosmic neutral -- never resisted, never amplified
+  arcane:{strong:null,weak:null},
 };
 const isArcaneUnlocked=()=>(G.awakenCount||0)>=1;
 const EL_STRONG_MUL=1.5, EL_WEAK_MUL=0.65;
@@ -1238,9 +1256,9 @@ function elMul(spellEl,enemyEl){
   return 1;
 }
 
-// ============================================================
-// SPELLS -- 52 total
-// ============================================================
+
+
+
 const SPELLS=[
   {id:'spark',name:'Spark',element:'fire',cost:4,dmg:8,cd:1.2,type:'damage',learnCost:0,desc:'Ignites: 25% of damage dealt burns over 3s. Recasts refresh.',burn:{ratio:0.25,dur:3}},
   {id:'cinder',name:'Cinder',element:'fire',cost:6,dmg:14,cd:1.4,type:'damage',learnCost:50,desc:'Quick ember.'},
@@ -1288,7 +1306,7 @@ const SPELLS=[
   {id:'sanguineburst',name:'Sanguine Burst',element:'blood',cost:50,dmg:180,cd:8,type:'damage',learnCost:7000,desc:'Eruption of blood.'},
   {id:'bloodpact',name:'Blood Pact',element:'blood',cost:0,dmg:0,cd:30,type:'buff',learnCost:4500,desc:'-25% HP for +50% dmg / 12s.',buff:{stat:'dmgMul',amt:0.5,dur:12},hpCost:0.25},
   {id:'vampiric',name:'Vampiric Embrace',element:'blood',cost:70,dmg:250,cd:14,type:'damage',learnCost:18000,desc:'Ult: +60% extra leech.',leech:0.6},
-  // Arcane -- unlocked after first Awakening. Expensive to learn, neutral matchup, high base power.
+
   {id:'manabolt',name:'Mana Bolt',element:'arcane',cost:25,dmg:55,cd:2.0,type:'damage',learnCost:8000,desc:'Pure mana projectile.'},
   {id:'astrallance',name:'Astral Lance',element:'arcane',cost:50,dmg:150,cd:4.0,type:'damage',learnCost:32000,desc:'Lance of starlight.',critBonus:0.10},
   {id:'cosmiceye',name:'Cosmic Eye',element:'arcane',cost:70,dmg:210,cd:6.0,type:'damage',learnCost:90000,desc:'Sees and pierces.',critBonus:0.30},
@@ -1298,7 +1316,7 @@ const SPELLS=[
 ];
 SPELLS.forEach(s=>s.glyph=EL_INFO[s.element].glyph);
 
-// Shared rules and guide copy. Secondary hits never trigger more reactions.
+
 const REACTIONS=[
   {id:'conduct',name:'Conduct',recipe:'Soaked + lightning',ratio:0.35,radius:3,limit:2,
    desc:'Consumes Soaked on the main target. A bonus strike deals 35% of the triggering hit to it and up to 2 nearby foes.',loadout:['tidalwave','lightningbolt']},
@@ -1308,9 +1326,9 @@ const REACTIONS=[
    desc:'Consumes Chilled on the main target for a bonus hit worth 50% of the triggering hit, ignoring defense.',loadout:['iceshard','stone']},
 ];
 
-// ============================================================
-// ZONES
-// ============================================================
+
+
+
 const ZONES=[
   {id:'meadow',name:'Verdant Meadow',lvl:1,killsToBoss:18,genType:'scatter',
    palette:{ground:'.',wall:'T',deco:','},
@@ -1394,19 +1412,19 @@ const ZONES=[
    boss:{name:'The Slumbering Elder',hp:7800000,atk:6400,def:2600,spd:1.0,gold:5200000,xp:2400000,glyph:'E',el:'arcane'}},
 ];
 
-// Dungeon palette (for treasure dungeon)
+
 const DUNGEON_PALETTE={ground:'.',wall:'#',deco:','};
 
-// Trial palette (Pinnacle Trials -- endless tower)
+
 const TRIAL_PALETTE={ground:'.',wall:'=',deco:':'};
 
-// Trial upgrades -- bought with Essence; persistent across Awakening
+
 const TRIAL_UPGRADES=[
   {id:'tu_gem',    name:'Gemstone Acumen',  desc:'+2% gem drop chance / lv',           cost:5,   costMul:1.45, max:25, type:'gemDropMul'},
   {id:'tu_mana',   name:'Essence Battery',  desc:'+0.5 mana regen / lv',               cost:8,   costMul:1.50, max:20, type:'manaRegenAdd'},
   {id:'tu_reward', name:'Trial Charm',      desc:'+5% combat rewards / lv',            cost:10,  costMul:1.50, max:30, type:'rewardMul'},
   {id:'tu_chest',  name:'Chest Mastery',    desc:'+1 chest / 2 lv',                    cost:25,  costMul:1.55, max:10, type:'chestSpawnAdd'},
-  // Trial-loop expansion
+
   {id:'tu_essence',name:'Reverberation',    desc:'+5% essence yield / lv',             cost:20,  costMul:1.45, max:20, type:'essenceMul'},
   {id:'tu_echo',   name:'Echo Reservoir',   desc:'+1 essence on every trial boss / lv',cost:30,  costMul:1.50, max:10, type:'essenceFlat'},
   {id:'tu_forge',  name:'Ascendant Forge',  desc:'+1 trial-gear rarity bump / lv',     cost:60,  costMul:2.00, max:2,  type:'trialGearBonus'},
@@ -1414,9 +1432,9 @@ const TRIAL_UPGRADES=[
   {id:'tu_slot',   name:'Tower Mastery',    desc:'+1 max spell slot (unique)',         cost:200, costMul:1,    max:1,  type:'spellSlotAdd'},
 ];
 
-// Trial milestones -- one-time best-floor rewards. checkTrialMilestone() runs
-// on every NEW best floor; entries with floor<=newBest that haven't been
-// claimed yet (G.trial.milestonesAwarded[floor]) get paid out and marked.
+
+
+
 const TRIAL_MILESTONES=[
   {floor:5,   essence:5,    flavor:'Foothold',    grant:{maps:1}},
   {floor:10,  essence:15,   flavor:'Resonance',   grant:{gemLvls:[1]}},
@@ -1427,9 +1445,9 @@ const TRIAL_MILESTONES=[
   {floor:500, essence:10000,flavor:'Beyond',      grant:{maps:10, gem_mat:50, gemLvls:[5,5], gear:[{rarity:'legendary'},{rarity:'legendary'},{rarity:'legendary'}]}},
 ];
 
-// ============================================================
-// RANK
-// ============================================================
+
+
+
 const RANKS=[
   {name:'Apprentice',lvl:1,perks:['3 spell slots']},
   {name:'Initiate',lvl:4,perks:['+1 slot','Manor unlocked']},
@@ -1443,9 +1461,9 @@ const RANKS=[
   {name:'Cosmic Sage',lvl:160,perks:['+25% all rewards','Final tier'],passive:{goldFind:0.25,xpMul:0.25,dmgMul:0.20,chestBonus:1,crit:0.05}},
 ];
 
-// ============================================================
-// MANOR
-// ============================================================
+
+
+
 const BUILDINGS=[
   {id:'garden',name:'Mana Garden',desc:'+0.3 mana regen / lv',baseCost:50,costMul:1.45,max:50,type:'manaRegen'},
   {id:'library',name:'Library',desc:'+5% XP / lv',baseCost:80,costMul:1.45,max:50,type:'xpMul'},
@@ -1460,9 +1478,9 @@ const BUILDINGS=[
   {id:'cartograph',name:'Cartographer',desc:'+1 chest / 5lv',baseCost:1500,costMul:1.60,max:20,type:'chestBonus'},
 ];
 
-// ============================================================
-// GEAR -- generic with tier+rarity, gem sockets
-// ============================================================
+
+
+
 const GEAR_SLOTS=['hat','robe','staff','ring','amulet'];
 const SLOT_NAMES={
   hat:['Cap','Hood','Coif','Circlet','Helm','Crown','Cowl','Mask','Hat'],
@@ -1478,7 +1496,7 @@ const SLOT_PREFIX={
   ring:['Copper','Silver','Gold','Platinum','Mithril','Star'],
   amulet:['Twine','Bronze','Silver','Jeweled','Sigiled','Astral'],
 };
-// Per-slot stat templates: which stats roll for that slot
+
 const SLOT_STATS={
   hat:    [{k:'maxMana',base:10,perTier:30},{k:'manaRegen',base:0.5,perTier:1.0},{k:'dmgMul',base:0.04,perTier:0.04}],
   robe:   [{k:'def',base:3,perTier:8},{k:'maxHp',base:20,perTier:80},{k:'dmgMul',base:0.04,perTier:0.04}],
@@ -1486,12 +1504,12 @@ const SLOT_STATS={
   ring:   [{k:'crit',base:0.03,perTier:0.025},{k:'dmgMul',base:0.04,perTier:0.04},{k:'spd',base:0.02,perTier:0.02}],
   amulet: [{k:'goldFind',base:0.04,perTier:0.06},{k:'xpMul',base:0.04,perTier:0.06},{k:'dmgMul',base:0.04,perTier:0.04}],
 };
-// Tier 0..5 (0=meadow gear, 5=void). Affects base power and roll ranges.
+
 const TIER_NAMES=['Apprentice','Adept','Veteran','Master','Mythic','Void'];
-// Set Bonuses -- equip multiple pieces of the same tier across slots to unlock
-// stacking bonuses at 2/3/4/5 piece thresholds. Each tier IS a set; legendary
-// recipes (T3-T5) count toward their tier's set, so a fully crafted T5 build
-// can hit the 5-piece Void bonus for a real "set complete" payoff.
+
+
+
+
 const GEAR_SETS=[
   {tier:0,bonuses:[
     {pc:2,stats:{dmgMul:0.05}},
@@ -1530,7 +1548,7 @@ const GEAR_SETS=[
     {pc:5,stats:{goldFind:0.75,chestBonus:2,dmgMul:0.30}},
   ]},
 ];
-// Rarity: stat multiplier and gem-slot odds
+
 const RARITIES={
   common:    {mul:1.00, sockets:[1.00,0.00,0.00,0.00], color:'rar-common',    label:'Common'},
   uncommon:  {mul:1.30, sockets:[0.40,0.55,0.05,0.00], color:'rar-uncommon',  label:'Uncommon'},
@@ -1540,12 +1558,12 @@ const RARITIES={
 };
 const RARITY_ORDER=['common','uncommon','rare','epic','legendary'];
 
-// Drop weights by zone tier (0..5). Higher tiers get more rarity.
+
 function dropRarityWeights(tier){
-  // base table, shifted by tier
+
   const t=Math.min(tier,5);
   const w={common:0.55,uncommon:0.30,rare:0.12,epic:0.025,legendary:0.005};
-  // shift: each tier moves probability mass to rarer
+
   for(let i=0;i<t;i++){
     const move=Math.min(0.10,w.common*0.4);
     w.common-=move; w.uncommon+=move*0.5; w.rare+=move*0.3; w.epic+=move*0.15; w.legendary+=move*0.05;
@@ -1562,13 +1580,13 @@ function pickWeighted(weights){
   return Object.keys(weights)[0];
 }
 
-// Generate a fresh gear instance
+
 let GEAR_ID_COUNTER=1;
 function genGear(slot, tier, rarity, opts={}){
   const r=RARITIES[rarity];
   const baseMul=1+tier*0.6;
   const stats={};
-  // Roll 2 main stats (3 if epic+, 4 if legendary)
+
   const numStats=rarity==='legendary'?4:rarity==='epic'?3:2;
   const pool=[...SLOT_STATS[slot]];
   for(let i=pool.length-1;i>0;i--){const j=ri(0,i);[pool[i],pool[j]]=[pool[j],pool[i]];}
@@ -1579,11 +1597,11 @@ function genGear(slot, tier, rarity, opts={}){
     else v=Math.round(v);
     stats[t.k]=(stats[t.k]||0)+v;
   }
-  // Roll sockets
+
   let socketCount=0;
   const r2=gameRandom(); let acc=0;
   for(let i=0;i<r.sockets.length;i++){acc+=r.sockets[i];if(r2<acc){socketCount=i;break;}}
-  // Name
+
   const prefix=SLOT_PREFIX[slot][Math.min(tier,SLOT_PREFIX[slot].length-1)];
   const noun=SLOT_NAMES[slot][Math.min(tier+(rarity==='epic'?1:rarity==='legendary'?2:0),SLOT_NAMES[slot].length-1)];
   const name=opts.name||`${prefix} ${noun}`;
@@ -1592,20 +1610,20 @@ function genGear(slot, tier, rarity, opts={}){
     slot, tier, rarity,
     name,
     stats,
-    sockets: Array(socketCount).fill(null), // null or {element, level}
+    sockets: Array(socketCount).fill(null),
     legendary: opts.legendary||false,
     legendaryAffinity: opts.legendaryAffinity||null,
     legendaryEffect: opts.legendaryEffect||null,
   };
 }
 
-// ============================================================
-// LEGENDARY RECIPES -- unique, expensive, named
-// ============================================================
-// LEGENDARY RECIPES -- Uniques. God-tier. Stats now significantly outscale a
-// random-rolled legendary of the same tier (since rolled legendaries can hit
-// dmgMul 3.0+ on a single stat, recipes need to deliver more raw value PLUS
-// unique mechanics via effectTags).
+
+
+
+
+
+
+
 const LEGENDARY_RECIPES=[
   {id:'l_sunheart',name:'Sunheart Pendant',slot:'amulet',tier:3,
    cost:{gold:200000,dust:5000,crystal:500,gem:30},
@@ -1662,9 +1680,9 @@ const LEGENDARY_RECIPES=[
    desc:'A ring that exists outside time. Mastery becomes might.'},
 ];
 
-// ============================================================
-// GEMS
-// ============================================================
+
+
+
 const GEM_TYPES=[
   {id:'fire',name:'Ruby',el:'fire',color:'fire',effect:'fire spell dmg'},
   {id:'water',name:'Sapphire',el:'water',color:'water',effect:'water spell dmg'},
@@ -1675,13 +1693,13 @@ const GEM_TYPES=[
   {id:'blood',name:'Garnet',el:'blood',color:'blood',effect:'blood spell dmg'},
   {id:'power',name:'Onyx',el:null,color:'power',effect:'all spell dmg'},
 ];
-// Gem level 1-5. Each level = +5% to its stat.
+
 function gemBonusPct(level){return 0.05*level;}
 function gemId(typeId,level){return `gem_${typeId}_${level}`;}
 
-// ============================================================
-// MATERIALS / GOLEMS / FAMILIARS / SUMMONS / RESEARCH / AWAKENING
-// ============================================================
+
+
+
 const GOLEM_TYPES=[
   {id:'dust',name:'Dust Golem',yields:'dust',rate:0.5,baseCost:300,costMul:1.50,max:30,zoneReq:0,desc:'Sifts arcane dust.'},
   {id:'crystal',name:'Crystal Golem',yields:'crystal',rate:0.10,baseCost:3500,costMul:1.60,max:25,zoneReq:2,desc:'Mines mana crystals.'},
@@ -1728,13 +1746,13 @@ const RESEARCH_PROJECTS=[
   {id:'r_atk3',name:'Spell Striking III',time:2400,cost:18000,bonus:{atk:40,dmgMul:0.20}},
   {id:'r_blood',name:'Blood Magic Doctrine',time:1800,cost:12000,bonus:{dmgMul:0.10}},
   {id:'r_chest',name:'Chest Sense',time:600,cost:2000,bonus:{chestBonus:1}},
-  {id:'r_dungeon',name:'Treasure Dowsing',time:1200,cost:5000,bonus:{dungeonChance:0.5}},  // doubles dungeon chance
+  {id:'r_dungeon',name:'Treasure Dowsing',time:1200,cost:5000,bonus:{dungeonChance:0.5}},
 ];
 
-// AWAKENING -- keep nodes more expensive
-// Awakening nodes -- a level-50 first awaken (~24 spark) buys
-// 2-3 stat upgrades, NEVER a perma-unlock in a single cycle. Perma-unlocks
-// require multiple awakenings to afford. Keeps the grind meaningful.
+
+
+
+
 const AWAKENING_NODES=[
   {id:'a_dmg',name:'Resonant Soul',cost:8,desc:'+15% damage permanently',bonus:{dmgMul:0.15}},
   {id:'a_gold',name:'Eternal Avarice',cost:9,desc:'+25% gold find',bonus:{goldFind:0.25}},
@@ -1744,13 +1762,13 @@ const AWAKENING_NODES=[
   {id:'a_crit',name:'Eternal Edge',cost:10,desc:'+10% crit',bonus:{crit:0.10}},
   {id:'a_atk',name:'Eternal Sharpness',cost:7,desc:'+8 ATK',bonus:{atk:8}},
   {id:'a_chest',name:'Treasure Sense',cost:9,desc:'+1 chest spawn / map',bonus:{chestBonus:1}},
-  // Persistent unlocks -- multi-awakening grind required
+
   {id:'a_start',name:'Awakened Mind',cost:30,desc:'Start at level 5 after Awakening',bonus:{startLvl:5}},
   {id:'a_keep_spells',name:'Bound Tomes',cost:60,desc:'Keep learned spells on Awakening',bonus:{keepSpells:true}},
   {id:'a_keep_familiars',name:'Bound Familiars',cost:65,desc:'Keep familiars on Awakening',bonus:{keepFamiliars:true}},
   {id:'a_keep_research',name:'Bound Codex',cost:75,desc:'Keep research on Awakening',bonus:{keepResearch:true}},
   {id:'a_keep_gear',name:'Bound Wardrobe',cost:80,desc:'Keep equipped + inventory gear on Awakening',bonus:{keepGear:true}},
-  // Tier-gated nodes -- unlock at higher Awakening tiers
+
   {id:'a_mythic_chest',name:'Treasure Sense II',cost:18,tierReq:3,desc:'+2 chest spawns / map',bonus:{chestBonus:2}},
   {id:'a_eternal_atk2',name:'Eternal Sharpness II',cost:22,tierReq:3,desc:'+25 ATK',bonus:{atk:25}},
   {id:'a_twilight',name:'Twilight Sage',cost:28,tierReq:3,desc:'Doubles your Eclipse bonus when light + shadow spells are equipped',bonus:{twilightSage:true}},
@@ -1773,9 +1791,9 @@ const CRUSADE_OPTS={
   ultra:{dur:28800,mul:600,name:'8 hours'},
 };
 
-// ============================================================
-// RITUAL -- passive XP channel; partial fork to equipped-spell elements
-// ============================================================
+
+
+
 const RITUAL_INTENSITY=[
   {id:1,name:'Low', manaCost:1, goldCost:0.2, baseXp:0.4},
   {id:2,name:'Med', manaCost:3, goldCost:1.0, baseXp:1.0},
@@ -1784,20 +1802,20 @@ const RITUAL_INTENSITY=[
 const RITUAL_EL_FORK=0.30;
 const RITUAL_ZONE_SCALE=0.8;
 
-// ============================================================
-// ALCHEMY -- ailments, recipes, skill curve
-// ============================================================
+
+
+
 const ALCHEMY_LVL_CAP=100;
-// Ailments inflicted on the hero by enemies whose element matches.
-// kind:'dot' applies dps over remaining duration; kind:'stat' applies a
-// negative additive shift in recomputeStats; kind:'mixed' does both.
-//   basePctHp -- DoT scales as % of hero maxHp/sec (snapshot at apply time)
-//   statMod   -- flat additive shifts; use for already-percentage stats
-//               (crit, spd, dmgMul) where flat numbers ARE percentages
-//   statModPct -- percentage-of-current-stat reductions for absolute stats
-//               (atk, def, manaRegen); resolved at apply time against hero stat
-// Ailment markers use printable ASCII.
-// Ailment names accompany their one-character markers.
+
+
+
+
+
+
+
+
+
+
 const AILMENT_TYPES={
   burn:       {name:'Burn',       glyph:'~',       element:'fire',   kind:'dot',   basePctHp:1.5, baseDur:5},
   frost:      {name:'Frost',      glyph:'*', element:'water',  kind:'stat',  statMod:{spd:-0.20,crit:-0.05}, baseDur:6},
@@ -1808,16 +1826,16 @@ const AILMENT_TYPES={
   hemorrhage: {name:'Hemorrhage', glyph:'b',       element:'blood',  kind:'dot',   basePctHp:2.5, baseDur:5},
   void:       {name:'Void',       glyph:'@',       element:'arcane', kind:'stat',  statModPct:{manaRegen:-0.50}, baseDur:6},
 };
-// Reverse map: element -> ailment id for fast lookup in applyAilment.
+
 const ELEMENT_TO_AILMENT={};
 for(const [aid,a] of Object.entries(AILMENT_TYPES))ELEMENT_TO_AILMENT[a.element]=aid;
 
-// Potion recipes -- categories: heal, buff, immunity, cure, booster.
-// brewTime in seconds; 0 = instant. Quality scaling lives at consume time
-// (effect.amount and duration are multiplied by quality).
-// Cost shape mirrors LEGENDARY_RECIPES -- only listed materials are charged.
+
+
+
+
 const POTION_RECIPES=[
-  // --- Restorative -----------------------------------------------------
+
   {id:'p_heal_l',  name:'Lesser Heal',     category:'restorative', tier:0, brewTime:0,
    cost:{gold:30, dust:10, herb:3},
    effect:{kind:'heal', amount:50},
@@ -1835,7 +1853,7 @@ const POTION_RECIPES=[
    effect:{kind:'heal', amount:99999},
    desc:'Full HP restore. Caps at maxHp regardless of quality.', glyph:'*'},
 
-  // --- Combat Buffs ----------------------------------------------------
+
   {id:'p_crit',    name:'Crit Tonic',      category:'buff', tier:1, brewTime:30,
    cost:{gold:200, dust:60, crystal:5, herb:15},
    effect:{kind:'buff', stat:'crit', amt:0.15, dur:30},
@@ -1853,7 +1871,7 @@ const POTION_RECIPES=[
    effect:{kind:'buff', stat:'def', amt:30, dur:45},
    desc:'+30 DEF / 45s. Q scales amt + duration.', glyph:'~'},
 
-  // --- Immunities ------------------------------------------------------
+
   {id:'p_imm_fire',   name:'Fireward Tincture', category:'immunity', tier:1, brewTime:30, element:'fire',
    cost:{gold:250, dust:70, crystal:6, herb:20},
    effect:{kind:'immunity', dur:60},
@@ -1891,7 +1909,7 @@ const POTION_RECIPES=[
    effect:{kind:'immunity', dur:90},
    desc:'Immune to ALL ailments for 90s. Q scales duration.', glyph:'*'},
 
-  // --- Cures (clear an ailment; quality irrelevant for cures themselves)
+
   {id:'p_cure_burn',       name:'Cure Burn',       category:'cure', tier:0, brewTime:0, element:'fire',
    cost:{gold:60, dust:20, herb:8},
    effect:{kind:'cure'}, desc:'Clear Burn ailment.', glyph:'+'},
@@ -1920,7 +1938,7 @@ const POTION_RECIPES=[
    cost:{gold:2000, dust:400, crystal:40, gem:2, herb:120},
    effect:{kind:'cure'}, desc:'Clear ALL active ailments at once.', glyph:'*'},
 
-  // --- Boosters (strong, longer-lasting buffs by category) -------------
+
   {id:'p_boost_gold', name:'Greedseeker',    category:'booster', tier:1, brewTime:30,
    cost:{gold:400, dust:80, crystal:8, herb:20},
    effect:{kind:'buff', stat:'goldFind', amt:0.50, dur:180},
@@ -1954,14 +1972,14 @@ const POTION_RECIPES=[
    effect:{kind:'buff', stat:'ritualMul', amt:0.50, dur:600},
    desc:'+50% ritual yield / 10min. Q scales amt + duration.', glyph:'#'},
 ];
-// XP awarded on brew complete, scaled by recipe tier.
-// T0 awards no XP so auto-brewing instant recipes can't power-level the skill;
-// real progression comes from time-gated T1+ brews.
+
+
+
 const ALCHEMY_XP_PER_TIER=[0, 5, 25, 100];
 
-// ============================================================
-// STATE
-// ============================================================
+
+
+
 const G={
   gold:0, spark:0,
   materials:{dust:0,crystal:0,gem:0,herb:0},
@@ -1980,37 +1998,37 @@ const G={
   buildings:{},
   golems:{dust:0,crystal:0,gem:0,herb:0},
   familiars:[],
-  gear:{hat:null,robe:null,staff:null,ring:null,amulet:null}, // each is a gear instance object
-  gearInventory:[], // array of gear instances
-  gemInventory:{}, // { 'gem_fire_1': count, ... }
+  gear:{hat:null,robe:null,staff:null,ring:null,amulet:null},
+  gearInventory:[],
+  gemInventory:{},
   treasureMaps:0,
   researchCompleted:{}, researchActive:null,
   awakening:{},
   awakenCount:0,
-  legendariesCrafted:{}, // id -> true
+  legendariesCrafted:{},
   crusade:{active:null},
   ritual:{active:false,intensity:1},
   trial:{inTrial:false,floor:1,bestFloor:0,essence:0,totalEssence:0,upgrades:{},trialReturn:null,milestonesAwarded:{}},
   alchemy:{lvl:1,xp:0,potions:{},brewSlots:[],autoDrink:{},autoCure:{},autoBrew:null},
   theme:'darkblue',
-  uiCollapsed:{}, // ui-only, per-element collapse state for Elements page
-  uiInvSort:'rarity', // gear inventory sort mode: rarity | alpha | strength
-  spellMastery:{}, // {spellId: totalCasts} -- survives Awakening (true meta progression)
+  uiCollapsed:{},
+  uiInvSort:'rarity',
+  spellMastery:{},
   eclipseSeen:false,
   baseStats:{},
-  // Live rates dashboard -- rolling 60-second window of gold/xp/kills/dmg events.
-  // Snapshots captured once per second in gameTick via recordRates().
+
+
   rates:{goldDelta60:[],xpDelta60:[],killTimes60:[],dmgDealt60:[],
          _lastSnapGold:0,_lastSnapXp:0,_lastSnapT:0,_windowStart:0},
-  // UI preferences (density, settings strip open state, last-saved wall-clock).
+
   ui:{density:'comfortable',settingsOpen:false},
-  speed:1,savedAt:0,
+  speed:1,savedAt:0,autoSell:{enabled:false,tiers:[],rarities:[]},
 };
 BUILDINGS.forEach(b=>G.buildings[b.id]=0);
 
-// ============================================================
-// UTILS
-// ============================================================
+
+
+
 const rand=(a,b)=>gameRandom()*(b-a)+a;
 const ri=(a,b)=>Math.floor(rand(a,b+1));
 const pick=a=>a[ri(0,a.length-1)];
@@ -2022,14 +2040,14 @@ function fmt(n){
   while(n>=1000&&i<u.length-1){n/=1000;i++;}
   return n.toFixed(n<10?2:n<100?1:0)+u[i];
 }
-function fmtG(n){return fmt(n)+' g';} // gold display -- keeps suffix unambiguous (not 'Kg')
+function fmtG(n){return fmt(n)+' g';}
 function fmtTime(s){
   s=Math.max(0,Math.floor(s));
   if(s<60)return s+'s';
   if(s<3600)return Math.floor(s/60)+'m '+(s%60)+'s';
   return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';
 }
-let _logDirty=true; // set on every new log entry; cleared after render
+let _logDirty=true;
 function logLine(text,cls=''){G.log.push({text:asciiText(text),cls});if(G.log.length>120)G.log.shift();_logDirty=true;}
 function xpForLevel(lvl){
   lvl=Math.max(1,lvl);
@@ -2042,9 +2060,9 @@ function xpForLevel(lvl){
   const [lastLevel,lastCost]=LEVEL_XP_MILESTONES[LEVEL_XP_MILESTONES.length-1];
   return Math.round(lastCost*Math.pow(lvl/lastLevel,3));
 }
-// Spell Mastery -- cumulative thresholds from 10 to 20K successful casts.
-// Each mastery level grants +5% to the spell's primary
-// effect (damage / heal amount / buff duration). Persistent across Awakening.
+
+
+
 const MASTERY_THRESHOLDS=[0,10,25,60,150,350,800,1800,4000,9000,20000];
 const MASTERY_BONUS_PER_LV=0.05;
 function masteryLevel(spellId){
@@ -2081,9 +2099,9 @@ function applyTheme(t){
   G.theme=t;
 }
 
-// ============================================================
-// RANK
-// ============================================================
+
+
+
 function currentRank(){let r=RANKS[0];for(const x of RANKS)if(G.hero.lvl>=x.lvl)r=x;return r;}
 function nextRank(){for(const x of RANKS)if(G.hero.lvl<x.lvl)return x;return null;}
 function maxSpellSlots(){
@@ -2103,28 +2121,28 @@ const isAutoResearch=()=>G.hero.lvl>=RANKS[5].lvl;
 const isLegendaryUnlocked=()=>G.hero.lvl>=RANKS[6].lvl;
 const isRitualUnlocked=()=>G.hero.lvl>=RANKS[2].lvl;
 const isTrialUnlocked=()=>G.hero.lvl>=RANKS[3].lvl;
-const isAlchemyUnlocked=()=>G.hero.lvl>=RANKS[2].lvl;        // Adept (lvl 9)
-// Locked-tab sub-header copy. Shows "unlocks at X (lvl N) -- you are lvl K | M to go"
-// so the player doesn't have to do the math themselves.
+const isAlchemyUnlocked=()=>G.hero.lvl>=RANKS[2].lvl;
+
+
 function lockMsg(rankIdx){
   const r=RANKS[rankIdx];
   const togo=Math.max(0,r.lvl-G.hero.lvl);
   return `unlocks at ${r.name} (lvl ${r.lvl}) -- you are lvl ${G.hero.lvl} | ${togo} to go`;
 }
-// ============================================================
-// IDLE-LOOP RATES -- gold/sec, xp/sec, kills/min, DPS over a rolling 60s window
-// ============================================================
-// Cumulative XP earned across the run, including prior level rollovers. Used
-// to compute xp-per-second deltas without losing data when the hero levels up
-// between snapshots.
+
+
+
+
+
+
 function totalLifetimeXp(){
   let t=0;
   for(let l=1;l<G.hero.lvl;l++)t+=xpForLevel(l);
   return t+G.hero.xp;
 }
-// Called once per real-world second from gameTick. Records positive deltas in
-// gold and XP (spending and prestige resets don't count as negative income)
-// and prunes events older than 60s.
+
+
+
 function recordRates(){
   const now=Date.now();
   const cutoff=now-60000;
@@ -2151,9 +2169,9 @@ function earnGold(amount){
   G.gold+=amount;
   addRate('goldDelta60',amount);
 }
-// Convenience: derive per-second / per-minute readouts from the rolling window.
-// Uses min(60s, since-window-start) so freshly-started sessions don't divide
-// by a synthetic 60.
+
+
+
 function currentRates(){
   const r=G.rates;
   const now=Date.now();
@@ -2169,10 +2187,10 @@ function currentRates(){
     windowSec:sec|0,
   };
 }
-const isAutoBrew=()=>G.hero.lvl>=RANKS[5].lvl;               // Magus (lvl 36)
-// Alchemy: skill curve, slot count, quality roll, immunity check.
+const isAutoBrew=()=>G.hero.lvl>=RANKS[5].lvl;
+
 function xpForAlchemyLevel(lvl){return Math.floor(15*Math.pow(1.05,Math.max(0,lvl-1)));}
-function brewSlotCount(){return 1+Math.floor((G.alchemy?.lvl||1)/25);} // 1@1, 2@25, 3@50, 4@75, 5@100
+function brewSlotCount(){return 1+Math.floor((G.alchemy?.lvl||1)/25);}
 function rollBrewQuality(){
   const lv=G.alchemy?.lvl||1;
   if(lv>=ALCHEMY_LVL_CAP)return 1.00;
@@ -2194,7 +2212,7 @@ function bumpAlchemyXp(amount){
   }
   if(a.lvl>=ALCHEMY_LVL_CAP)a.xp=0;
 }
-// Brewing -- startBrew, completeBrew, tickBrew, cancelBrew, tryAutoBrew
+
 function getRecipe(id){return POTION_RECIPES.find(r=>r.id===id);}
 function startBrew(recipeId){
   const r=getRecipe(recipeId);if(!r)return;
@@ -2226,9 +2244,9 @@ function completeBrew(recipeId){
   tryAutoBrew();
 }
 function brewSpeedMul(){
-  // Lab Imp researchSpeed bonus also flows into brew speed (per plan SF).
-  // researchSpeed baselines at 1.0 in recomputeStats; familiar contributions
-  // add on top, so we return it directly (1.0 = no bonus, 1.2 = 20% faster).
+
+
+
   return G.baseStats.researchSpeed||1;
 }
 function tickBrew(){
@@ -2251,33 +2269,33 @@ function cancelBrew(slotIdx){
 }
 let _autoBrewInFlight=false;
 function tryAutoBrew(){
-  // Re-entrance guard: completeBrew calls tryAutoBrew, which calls startBrew,
-  // which for T0 instant recipes calls completeBrew again -- unbounded recursion
-  // unless we short-circuit. The outer while loop already iterates, so any
-  // re-entrant call is a no-op.
+
+
+
+
   if(_autoBrewInFlight)return;
   if(!isAutoBrew()||!G.alchemy.autoBrew)return;
   _autoBrewInFlight=true;
   try{
-    let safety=20; // hard ceiling on instant-brew bursts per call
+    let safety=20;
     while(safety-- > 0 && G.alchemy.brewSlots.length<brewSlotCount()){
       const r=getRecipe(G.alchemy.autoBrew);if(!r||(r.element&&r.element!=='all'&&!schoolUnlocked(r.element)))return;
       if(!canPay(r.cost))return;
       startBrew(G.alchemy.autoBrew);
-      if(!r.brewTime)continue; // instant brew, try to fill another slot
-      // Fill every available cauldron, including slots unlocked during brewing.
+      if(!r.brewTime)continue;
+
     }
   } finally {
     _autoBrewInFlight=false;
   }
 }
-// Consumption -- consumePotion, tickAutoConsume
+
 function consumePotion(recipeId,qKey){
   const r=getRecipe(recipeId);if(!r)return;
   if(r.element&&r.element!=='all'&&!schoolUnlocked(r.element))return;
   const buckets=G.alchemy.potions[recipeId];
   if(!buckets)return;
-  // If qKey not provided, pick highest-quality bucket with stock
+
   if(!qKey){
     const keys=Object.keys(buckets).filter(k=>buckets[k]>0).sort((a,b)=>parseFloat(b)-parseFloat(a));
     if(!keys.length)return;
@@ -2336,15 +2354,15 @@ function tickAutoConsume(){
     else if(r.effect.kind==='mana'&&G.hero.mana/G.hero.maxMana<cfg.threshold)consumePotion(id);
   }
 }
-// Ailments -- applyAilment + tickAilments
+
 function applyAilment(elementId,enemyLvl){
   const aid=ELEMENT_TO_AILMENT[elementId];
   if(!aid)return false;
   if(blockMagicAilment())return false;
   if(hasImmunity(elementId)){logLine(`* Resisted ${AILMENT_TYPES[aid].name}.`,'cast');return false;}
   const a=AILMENT_TYPES[aid];
-  // Auto-cure short-circuit: if a configured cure (specific or 'all') is
-  // stocked, skip the affliction entirely instead of pushing-then-removing.
+
+
   const cureId=[G.alchemy.autoCure[aid],G.alchemy.autoCure.all].find(id=>
     id&&G.alchemy.potions[id]&&Object.values(G.alchemy.potions[id]).some(c=>c>0));
   if(cureId){
@@ -2355,21 +2373,21 @@ function applyAilment(elementId,enemyLvl){
   const dur=a.baseDur;
   const existing=G.hero.ailments.find(x=>x.id===aid);
   if(existing){
-    // Refresh the original snapshot; sampling an already reduced stat would
-    // make repeated Void/Weaken/Frailty applications weaken their own effect.
+
+
     existing.remaining=dur;
     logLine(`! Refreshed: ${a.name} (${dur}s)`,'die');
     return true;
   }
   const inst={id:aid,remaining:dur,source:elementId};
-  // DoT damage scales with hero maxHp so endgame ailments stay meaningful
-  // instead of dealing trivial flat damage.
+
+
   if(a.basePctHp)inst.dps=a.basePctHp/100*G.hero.maxHp;
   if(a.statMod||a.statModPct){
     inst.statMod={};
-    // Flat-additive stat mods (already-percentage stats like crit/spd/dmgMul)
+
     if(a.statMod)for(const k in a.statMod)inst.statMod[k]=a.statMod[k];
-    // Percentage-of-current-stat mods (atk/def/manaRegen) snapshot at apply time
+
     if(a.statModPct){
       for(const k in a.statModPct){
         const cur=G.baseStats[k]||0;
@@ -2377,7 +2395,7 @@ function applyAilment(elementId,enemyLvl){
       }
     }
   }
-  // Replace existing instance of same id rather than stacking -- refresh duration.
+
   G.hero.ailments=G.hero.ailments.filter(x=>x.id!==aid);
   G.hero.ailments.push(inst);
   if(inst.statMod)recomputeStats();
@@ -2400,10 +2418,10 @@ function tickAilments(){
   if(G.hero.ailments.length!==before&&statChange)recomputeStats();
   if(G.hero.hp<=0&&G.hero.alive)onHeroDead();
 }
-// Passive combos -- dual-element synergies. Equip >=1 spell of each element in
-// `els` to activate. Bonuses fold into recomputeStats; effectTags route through
-// effectTagSum (same path as legendary tags). Optional `doubleNode` is an
-// awakening node id that multiplies the combo by x2.
+
+
+
+
 const PASSIVE_COMBOS=[
   {id:'eclipse',name:'Eclipse',els:['light','shadow'],color:'el-light',icon:'*o',
    bonus:{dmgMul:0.15,manaRegen:1},doubleNode:'a_twilight',
@@ -2436,7 +2454,7 @@ function activeCombos(){
 function comboMul(c){
   return c.doubleNode&&G.awakening?.[c.doubleNode]?2:1;
 }
-// Backwards-compat helpers (still referenced in places like the eclipseSeen log)
+
 function hasEclipse(){return activeCombos().some(c=>c.id==='eclipse');}
 function eclipseBonus(){
   const c=activeCombos().find(x=>x.id==='eclipse');
@@ -2456,18 +2474,18 @@ function awakenDifficulty(){
   };
 }
 
-// ============================================================
-// DERIVED STATS
-// ============================================================
+
+
+
 function gearStatBonus(item){
-  // returns merged stats including socketed gem effects on top of base stats
+
   if(!item)return {};
   const out={...item.stats};
-  // Element-specific spell damage from gems is tracked separately (see castSpell)
+
   return out;
 }
 function elementBonusFromGear(){
-  // returns {fire: 0.10, water: 0.05, ...} additive multipliers
+
   const out=Object.fromEntries([...ELEMENTS,'_all'].map(el=>[el,0]));
   for(const slot of GEAR_SLOTS){
     const item=G.gear[slot];
@@ -2497,7 +2515,7 @@ function effectTagSum(tag){
       if(t.slice(0,i)===tag)sum+=parseFloat(t.slice(i+1))||0;
     }
   }
-  // Combo effectTags (Bloodmoon's bonusLeech etc.) -- multiplied by doubleNode if owned
+
   for(const c of activeCombos()){
     if(!c.effectTags)continue;
     const mul=comboMul(c);
@@ -2551,7 +2569,7 @@ function recomputeStats(){
       }
     }
   }
-  // Set bonuses -- apply cumulative thresholds for each equipped tier
+
   for(const set of GEAR_SETS){
     const count=setCounts[set.tier]||0;
     for(const b of set.bonuses){
@@ -2579,8 +2597,8 @@ function recomputeStats(){
     else if(t.stat==='dmgMul'||t.stat==='goldFind'||t.stat==='xpMul')familiarBonuses[t.stat]=(familiarBonuses[t.stat]||0)+amt;
     else s[t.stat]=(s[t.stat]||0)+amt;
   }
-  // Every familiar contributes; diminishing returns keep repeated summons from
-  // turning modest percentage bonuses into an exponential runaway.
+
+
   for(const [stat,bonus] of Object.entries(familiarBonuses))s[stat]*=1+Math.log1p(bonus);
   for(const id in G.awakening){
     if(!G.awakening[id])continue;
@@ -2599,7 +2617,7 @@ function recomputeStats(){
     if(u.type==='rewardMul')s.rewardMul*=(1+0.05*lv);
     if(u.type==='chestSpawnAdd')s.chestBonus+=Math.floor(lv/2);
   }
-  // Rank passives (Sage and beyond)
+
   const cr=currentRank();
   if(cr.passive){
     for(const k in cr.passive){
@@ -2608,7 +2626,7 @@ function recomputeStats(){
       else s[k]=(s[k]||0)+v;
     }
   }
-  // Passive combos -- fold every active combo's bonuses into baseStats
+
   for(const c of activeCombos()){
     const mul=comboMul(c);
     for(const k in c.bonus){
@@ -2619,9 +2637,9 @@ function recomputeStats(){
   }
   for(const buff of G.buffs){
     if(buff._spellId&&!schoolUnlocked(SPELLS.find(sp=>sp.id===buff._spellId)?.element))continue;
-    if(buff.stat&&buff.stat.startsWith('immune:'))continue; // markers, not stats
-    // Multiplicative folding for percent-style stats so booster brews stack
-    // consistently with gear / building / research bonuses of the same stat.
+    if(buff.stat&&buff.stat.startsWith('immune:'))continue;
+
+
     if(buff.stat==='dmgMul'||buff.stat==='goldFind'||buff.stat==='xpMul'
        ||buff.stat==='elXpMul'||buff.stat==='ritualMul'){
       s[buff.stat]=(s[buff.stat]||1)*(1+buff.amt);
@@ -2629,9 +2647,9 @@ function recomputeStats(){
       s[buff.stat]=(s[buff.stat]||0)+buff.amt;
     }
   }
-  // Hero ailments -- additive negative shifts (statMod values are already negative).
-  // dmgMul ailments fold multiplicatively to mirror buff handling above; floor at 0.1
-  // so a stack of curses can't reduce damage to zero or below.
+
+
+
   if(G.hero.ailments&&G.hero.ailments.length){
     for(const a of G.hero.ailments){
       if(!a.statMod)continue;
@@ -2651,9 +2669,9 @@ function recomputeStats(){
   G.hero.mana=clamp(G.hero.mana,0,G.hero.maxMana);
 }
 
-// ============================================================
-// MAP GENERATORS
-// ============================================================
+
+
+
 function emptyGrid(palette){
   const m=[];
   for(let y=0;y<MAP_H;y++){
@@ -2773,15 +2791,15 @@ function genRooms(palette){
   return m;
 }
 function genDungeon(palette){
-  // big open chamber with pillars, very walkable
+
   const m=emptyGrid(palette);
-  // Pillars
+
   for(let i=0;i<8;i++){
     const x=ri(3,MAP_W-4),y=ri(2,MAP_H-3);
     m[y][x]=palette.wall;
     if(gameRandom()<0.5){if(m[y+1])m[y+1][x]=palette.wall;}
   }
-  // Light deco
+
   sprinkleDeco(m,palette,0.10);
   return m;
 }
@@ -2808,17 +2826,17 @@ function ensureConnected(m,palette){
   if(best.length<30){
     const cy=Math.floor(MAP_H/2);
     for(let x=1;x<MAP_W-1;x++)m[cy][x]=palette.ground;
-    // Join the emergency corridor to the retained island. Carving a row alone
-    // could create a second component and strand a chest or boss across water.
+
+
     if(best.length){
       const [bx,by]=best.reduce((a,b)=>Math.abs(b[1]-cy)<Math.abs(a[1]-cy)?b:a);
       for(let y=Math.min(by,cy);y<=Math.max(by,cy);y++)m[y][bx]=palette.ground;
     }
   }
 }
-// FIXED: properly stage map gen so spawn checks use current map only
+
 function genMap(opts={}){
-  // Reset all on-map entities BEFORE generating, so findOpenTile works on fresh map
+
   G.mobs=[];G.loot=[];G.chests=[];G.bossActive=false;G.enemy=null;
   const palette=curPalette();
   let m;
@@ -2839,11 +2857,11 @@ function genMap(opts={}){
   }
   ensureConnected(m,palette);
   G.map=m;
-  // Now find a definitively walkable tile for the hero on the FINAL map
+
   G.hero.pos=findOpenTile();
-  // ...and ensure that very tile is ground (paranoia)
+
   if(!isWalkable(G.hero.pos.x,G.hero.pos.y)){
-    // emergency carve
+
     for(let y=1;y<MAP_H-1;y++)for(let x=1;x<MAP_W-1;x++){
       if(isWalkable(x,y)){G.hero.pos={x,y};return;}
     }
@@ -2851,7 +2869,7 @@ function genMap(opts={}){
     G.hero.pos={x:Math.floor(MAP_W/2),y:Math.floor(MAP_H/2)};
   }
   if(G.inDungeon)placeDungeonContent();
-  else if(G.trial.inTrial){/* boss placed by spawnTrialBoss */}
+  else if(G.trial.inTrial){ }
   else { spawnMobs(); placeChests(); }
 }
 function curPalette(){
@@ -2870,12 +2888,12 @@ function tileBlocked(x,y){
   return false;
 }
 function findOpenTile(){
-  // Avoid the hero's tile too -- placeChests / spawnMobs run AFTER genMap
-  // sets G.hero.pos, and dropping a chest or mob on top of the hero soft-
-  // locks auto-explore (BFS source==target returns null and stepHero's
-  // fallback can't move because dx=dy=0).
+
+
+
+
   const hx=G.hero.pos.x, hy=G.hero.pos.y;
-  // Try random tiles first
+
   for(let i=0;i<400;i++){
     const x=ri(1,MAP_W-2),y=ri(1,MAP_H-2);
     if(!isWalkable(x,y))continue;
@@ -2884,13 +2902,13 @@ function findOpenTile(){
     if(G.chests.some(c=>c.x===x&&c.y===y&&!c.opened))continue;
     return {x,y};
   }
-  // Fall back to systematic scan -- guaranteed walkable
+
   for(let y=1;y<MAP_H-1;y++)for(let x=1;x<MAP_W-1;x++){
     if(x===hx&&y===hy)continue;
     if(isWalkable(x,y)&&!G.mobs.some(m=>m.x===x&&m.y===y)&&!G.chests.some(c=>c.x===x&&c.y===y&&!c.opened))
       return {x,y};
   }
-  // Truly nowhere -- pick any walkable (last resort, hero check dropped)
+
   for(let y=1;y<MAP_H-1;y++)for(let x=1;x<MAP_W-1;x++)
     if(isWalkable(x,y))return {x,y};
   return {x:2,y:2};
@@ -2907,24 +2925,24 @@ function spawnMobs(){
 }
 function spawnBoss(){
   const Z=ZONES[G.zoneIdx];
-  // Clear normal mobs first
+
   G.mobs=[];
   const t=findOpenTile();
   G.mobs.push(makeEnemy(Z.boss,t.x,t.y,true));
   G.bossActive=true;
   logLine(`A dragon stirs: ${Z.boss.name} (${schoolUnlocked(Z.boss.el)?EL_INFO[Z.boss.el].name:'Unknown'})!`,'boss');
 }
-// Global enemy difficulty multipliers -- counter-balance to gear dmgMul stacking
-// (each gear piece's dmgMul stat multiplies, so 5 pieces compound fast). Applied
-// in makeEnemy on top of awakening tier scaling. Skipped for Trial bosses since
-// they have their own per-floor exponential curve that's already calibrated.
-//
-// Tuned for the post-awakening grind, where the player resets to lvl 1 with no
-// gear and only Spark. Previously x10 HP / x1.5 atk made tier-1 zone-0 slimes
-// (15x HP, 2.1x atk) literally unkillable at default dmg. Pulled to x3 / x1.1
-// so a fresh awakened player can survive the climb. Over-geared players still
-// 1-shot mobs at tier 0 -- that's expected; their challenge curve is awakening
-// tier scaling (+50% HP / +40% atk per cycle) and Trial floor scaling.
+
+
+
+
+
+
+
+
+
+
+
 const ENEMY_HP_SCALE=3;
 const ENEMY_ATK_SCALE=1.1;
 const ENEMY_REWARD_SCALE=1.4;
@@ -2945,9 +2963,9 @@ function makeEnemy(ref,x,y,isBoss){
   return {ref:sref,x,y,isBoss,hp:sref.hp,maxHp:sref.hp,atkCd:1/ref.spd,dotTimers:[],statuses:{},slowed:0};
 }
 
-// ============================================================
-// CHESTS
-// ============================================================
+
+
+
 function placeChests(){
   const baseCount=1+Math.floor(G.zoneIdx/2);
   const bonus=G.baseStats.chestBonus||0;
@@ -2962,7 +2980,7 @@ function placeChests(){
   }
 }
 function placeDungeonContent(){
-  // Many chests, few weak mobs
+
   const chestCount=12+ri(0,6);
   for(let i=0;i<chestCount;i++){
     const t=findOpenTile();if(!t)continue;
@@ -2972,7 +2990,7 @@ function placeDungeonContent(){
     else if(r<0.55)tier='rare';
     G.chests.push({x:t.x,y:t.y,tier,opened:false});
   }
-  // A handful of guardians scaled to current zone
+
   const guardCount=3+ri(0,2);
   const Z=ZONES[G.zoneIdx];
   for(let i=0;i<guardCount;i++){
@@ -2980,7 +2998,7 @@ function placeDungeonContent(){
     const t=findOpenTile();
     G.mobs.push(makeEnemy(e,t.x,t.y,false));
   }
-  G.dungeonTimeLeft=120; // 2 minutes to plunder
+  G.dungeonTimeLeft=120;
 }
 function openChest(c){
   if(c.opened)return;
@@ -3005,7 +3023,7 @@ function openChest(c){
   }
   logLine(`  ${matStr}`,'chest');
 
-  // Gem drop
+
   if(gameRandom()<(0.10+0.10*tier.mul)*(G.baseStats.gemDropMul||1)){
     const g=pick(GEM_TYPES);
     const lvl=Math.min(5,Math.max(1,Math.floor(rand(1,2+tier.mul/2))));
@@ -3030,11 +3048,10 @@ function openChest(c){
     G.treasureMaps+=1;
     logLine(`  - Treasure Map!`,'rank');
   }
-  // Gear drop from chests, scaled to zone
+
   if(gameRandom()<0.20+0.10*tier.mul){
     const item=rollGearForZone(G.zoneIdx,tier.mul>=3?1:0);
-    storeGear(item);
-    logLine(`  ${item.name} [${RARITIES[item.rarity].label}]`,'loot');
+    if(storeGear(item,true))logLine(`  ${item.name} [${RARITIES[item.rarity].label}]`,'loot');
   }
   c.openedTtl=6;
 }
@@ -3048,12 +3065,12 @@ function useTreasureMap(){
   logLine(`- Treasure map used.`,'rank');
 }
 
-// Roll gear for a zone tier (0..5). bonusRarity bumps the rarity table.
+
 function rollGearForZone(zoneTier, bonusRarity=0){
   const slot=pick(GEAR_SLOTS);
   let weights=dropRarityWeights(zoneTier);
   if(bonusRarity>0){
-    // Move weight up the chain
+
     for(let i=0;i<bonusRarity;i++){
       const move=weights.common*0.3;
       weights.common-=move; weights.uncommon+=move*0.4; weights.rare+=move*0.3; weights.epic+=move*0.2; weights.legendary+=move*0.1;
@@ -3064,15 +3081,15 @@ function rollGearForZone(zoneTier, bonusRarity=0){
   return genGear(slot,tier,rarity);
 }
 
-// ============================================================
-// DUNGEON ENTRY/EXIT
-// ============================================================
+
+
+
 function rollDungeonEntry(){
-  // Triggered on each new map (mob clear / boss defeat)
+
   if(G.inDungeon||G.trial.inTrial)return false;
   let chance=DUNGEON_CHANCE;
   if(G.researchCompleted.r_dungeon)chance*=1.5;
-  // Cap chance
+
   chance=Math.min(0.05,chance);
   return gameRandom()<chance;
 }
@@ -3098,14 +3115,14 @@ function exitDungeon(reason='returned'){
   genMap();
 }
 
-// ============================================================
-// TRIALS -- endless tower; one boss per floor, scales with floor + awakening tier
-// ============================================================
+
+
+
 function trialBossRef(floor){
   const depth=Math.max(0,floor-1);
-  // Polynomial growth keeps F100/F200 milestones within the equipment game's
-  // scale. Health grows faster than rewards, so pushing deeper remains a
-  // combat challenge without the former exponential wall at higher floors.
+
+
+
   const available=visibleSchools();
   const el=available[(floor-1)%available.length];
   const undead=floor>=10&&((floor-1)%4===3);
@@ -3124,7 +3141,7 @@ function trialBossRef(floor){
 }
 function genTrial(palette){
   const m=emptyGrid(palette);
-  // Four corner pillars and a center deco ring for visual texture
+
   const cx=Math.floor(MAP_W/2),cy=Math.floor(MAP_H/2);
   for(const [dx,dy] of [[-3,-2],[3,-2],[-3,2],[3,2]]){
     const x=cx+dx,y=cy+dy;
@@ -3134,8 +3151,8 @@ function genTrial(palette){
     if(m[y][x]===palette.ground&&gameRandom()<0.05)m[y][x]=palette.deco;
   return m;
 }
-// Floor -> gear tier mapping for trial drops. Uses the same 0-5 scale as zone
-// gear so genGear() / RARITIES tables work without changes.
+
+
 function trialGearTier(floor){
   if(floor>=81)return 5;
   if(floor>=51)return 4;
@@ -3144,9 +3161,9 @@ function trialGearTier(floor){
   if(floor>=6) return 1;
   return 0;
 }
-// Per-floor material bundle dropped by every trial boss. Dust scales aggressively
-// (the cheap material), crystal kicks in at F5+, gem at F15+. Tuned so a F50
-// climb yields meaningful crafting / forging income beyond just essence.
+
+
+
 function awardTrialMaterials(floor){
   const dust=20+Math.floor(floor*5+Math.pow(floor,1.15));
   G.materials.dust+=dust;
@@ -3159,7 +3176,7 @@ function awardTrialMaterials(floor){
     gem=Math.max(1,Math.floor(floor/15));
     G.materials.gem+=gem;
   }
-  // Herb scales with floor too -- alchemy is meant to keep up with trials.
+
   herb=4+Math.floor(floor*1.2+Math.pow(floor,0.85));
   G.materials.herb=(G.materials.herb||0)+herb;
   const parts=[`+${dust} dust`];
@@ -3168,8 +3185,8 @@ function awardTrialMaterials(floor){
   parts.push(`+${herb} herb`);
   logLine(`o Trial spoils: ${parts.join(' | ')}`,'loot');
 }
-// Award any milestones the player has just qualified for. Idempotent -- each
-// milestone floor only ever pays out once thanks to G.trial.milestonesAwarded.
+
+
 function checkTrialMilestone(newBestFloor){
   for(const m of TRIAL_MILESTONES){
     if(newBestFloor<m.floor)continue;
@@ -3196,8 +3213,7 @@ function checkTrialMilestone(newBestFloor){
         const tier=trialGearTier(newBestFloor);
         const slot=pick(GEAR_SLOTS);
         const item=genGear(slot,tier,spec.rarity);
-        storeGear(item);
-        lines.push(`  +${item.name} [${RARITIES[spec.rarity].label}]`);
+        if(storeGear(item,true))lines.push(`  +${item.name} [${RARITIES[spec.rarity].label}]`);
       }
     }
     for(const ln of lines)logLine(ln,'legendary');
@@ -3208,10 +3224,10 @@ function enterTrial(){
   if(!isTrialUnlocked()){logLine('Trials sealed until Sorcerer.','sys');return;}
   if(G.inDungeon||G.trial.inTrial)return;
   if(G.bossActive||G.enemy){logLine('Cannot enter Trials mid-combat.','sys');return;}
-  // Pinnacle Mastery -- fast-forward to a fraction of bestFloor on a FRESH
-  // climb (floor==1, post-Awakening) so an endgame player doesn't have to
-  // re-grind floors 1-50 every prestige cycle. If you exited mid-run, your
-  // saved floor is preserved untouched and the skip doesn't apply.
+
+
+
+
   const skip=G.trial.upgrades.tu_skip||0;
   if(skip>0&&G.trial.floor===1&&G.trial.bestFloor>=5){
     const target=Math.max(1,Math.min(G.trial.bestFloor,Math.floor(G.trial.bestFloor*0.20*skip)));
@@ -3251,20 +3267,20 @@ function onTrialBossKilled(){
   checkLevelUp();
   const f=G.trial.floor;
   const u=G.trial.upgrades;
-  // Base essence: 1, +1 every 5th floor, +2 every 10th floor.
+
   let essence=1;
   if(f%5===0)essence+=1;
   if(f%10===0)essence+=2;
-  // Echo Reservoir: flat +1 per lv on every trial boss kill.
+
   essence+=u.tu_echo||0;
-  // Reverberation: +5% per lv, applied last so the bonus flows through Echo too.
+
   essence=Math.ceil(essence*(1+0.05*(u.tu_essence||0)));
   G.trial.essence+=essence;
   G.trial.totalEssence+=essence;
-  // Floor-scaled material bundle -- replaces the weak zoneIdx-based dust drop
-  // that fired in onEnemyDead with something that actually scales with depth.
+
+
   awardTrialMaterials(f);
-  // Best-floor tracking + milestone payout (idempotent per floor).
+
   if(f>G.trial.bestFloor){
     G.trial.bestFloor=f;
     checkTrialMilestone(f);
@@ -3274,8 +3290,8 @@ function onTrialBossKilled(){
   if(G.trial.inTrial){
     const trial=G.trial,returnState=trial.trialReturn,nextFloor=trial.floor;
     const advance=()=>{
-      // A resumed/imported run owns its own boss. Only defer a transition
-      // that still belongs to this run, and recheck it when the page returns.
+
+
       if(G.trial!==trial||!trial.inTrial||trial.trialReturn!==returnState
         ||trial.floor!==nextFloor||G.enemy||G.mobs.length!==0)return;
       if(document.hidden||_pageHidden||_loopSuspended){_pendingTrialTransition=advance;return;}
@@ -3302,9 +3318,9 @@ function buyTrialUpgrade(id){
   logLine(`^ Trial: ${u.name} -> lv ${G.trial.upgrades[id]}`,'rank');
 }
 
-// ============================================================
-// BFS
-// ============================================================
+
+
+
 function bfsNextStep(sx,sy,gx,gy){
   if(sx===gx&&sy===gy)return null;
   const startKey=`${sx},${sy}`,goalKey=`${gx},${gy}`;
@@ -3333,16 +3349,16 @@ function bfsNextStep(sx,sy,gx,gy){
   }
 }
 
-// ============================================================
-// MOVEMENT
-// ============================================================
+
+
+
 function stepHero(){
   if(!G.hero.alive||G.enemy)return;
-  // Recovery for the rare case the hero ends a tick standing on an unopened
-  // chest (legacy saves, or any path that bypasses tryMove's chest-open).
-  // Without this, auto-explore would target the chest under our feet, get a
-  // null BFS step (source==target), and the dx=dy=0 fallback would never
-  // move us -- soft-locking the run.
+
+
+
+
+
   const standing=G.chests.find(c=>!c.opened&&c.x===G.hero.pos.x&&c.y===G.hero.pos.y);
   if(standing)openChest(standing);
   let bestMob=null,bestD=Infinity;
@@ -3354,7 +3370,7 @@ function stepHero(){
   if(!G.autoExplore)return;
   let target=null;
   const live=G.chests.filter(c=>!c.opened);
-  // In dungeon, prioritize chests strongly
+
   if(live.length>0){
     let bc=null,bd=Infinity;
     for(const c of live){
@@ -3404,9 +3420,9 @@ function engage(mob){
   logLine(`Engaged ${mob.ref.name}${mob.isBoss?' (DRAGON)':''}.`,mob.isBoss?'boss':'sys');
 }
 
-// ============================================================
-// COMBAT
-// ============================================================
+
+
+
 function dealDamage(target,amount){
   const actual=Math.min(Math.max(0,target.hp),Math.max(0,amount));
   target.hp-=actual;
@@ -3437,7 +3453,7 @@ function clearSpellPath(a,b){
     const twice=2*err,ox=x,oy=y;
     if(twice>-dy){err-=dy;x+=sx;}
     if(twice<dx){err+=dx;y+=sy;}
-    // A diagonal may not slip between touching walls.
+
     if(!isWalkable(x,y)||(x!==ox&&y!==oy&&(!isWalkable(x,oy)||!isWalkable(ox,y))))return false;
   }
   return true;
@@ -3484,7 +3500,7 @@ function triggerReactions(sp,target,hitDamage){
         target.dotTimers=target.dotTimers.filter(d=>!burns.includes(d));
         for(const e of victims)for(const burn of burns){
           const old=(e.dotTimers||[]).find(d=>d.spellId===burn.spellId);
-          // Transfer can refresh a burn but cannot weaken an existing stronger one.
+
           refreshEnemyDot(e,{...burn,element:'fire',dps:Math.max(old?.dps||0,burn.dps*reaction.ratio),remaining:Math.max(old?.remaining||0,burn.remaining)});
         }
         logLine(`> Wildfire! Embers spread to ${victims.length} nearby foe${victims.length===1?'':'s'}.`,'cast');
@@ -3524,8 +3540,8 @@ function combatTick(){
     dmg=interceptMagicHit(e,dmg);
     G.hero.hp-=dmg;
     logLine(`${e.ref.name} hits you for ${Math.floor(dmg)}.`,'dmg');
-    // Ailment proc: enemies attempt to inflict an ailment matching their element.
-    // Bosses always roll, normal mobs scale by enemy level capped at 25%.
+
+
     if(e.ref.el&&isAlchemyUnlocked()){
       const enemyLvl=e.ref.atk>0?Math.max(1,Math.ceil(Math.log10(e.ref.hp+1)*4)):1;
       const baseChance=e.isBoss?0.60:Math.min(0.25,0.05+0.005*enemyLvl);
@@ -3573,9 +3589,9 @@ function castSpell(sp,target){
   if(sp.expansion)return castExpansionSpell(sp,target);
   const s=G.baseStats;
   G.hero.mana-=sp.cost;
-  G.spellCd[sp.id]=sp.cd*Math.max(0.1,1-effectTagSum('cdMul')); // Voidcrown reduces CDs
-  bumpMastery(sp.id); // counts every successful cast -- mastery survives Awakening
-  const masteryMul=masteryBonus(sp.id); // +5% per mastery level on primary effect
+  G.spellCd[sp.id]=sp.cd*Math.max(0.1,1-effectTagSum('cdMul'));
+  bumpMastery(sp.id);
+  const masteryMul=masteryBonus(sp.id);
   if(sp.hpCost){
     const cost=Math.floor(G.hero.maxHp*sp.hpCost);
     G.hero.hp=Math.max(1,G.hero.hp-cost);
@@ -3590,7 +3606,7 @@ function castSpell(sp,target){
   }
   if(sp.type==='buff'){
     const masteredBuff={...sp.buff};
-    if(masteredBuff.dur)masteredBuff.dur*=masteryMul; // mastery extends buff duration
+    if(masteredBuff.dur)masteredBuff.dur*=masteryMul;
     G.buffs=G.buffs.filter(b=>b._spellId!==sp.id);
     G.buffs.push({...masteredBuff,_spellId:sp.id,...(sp.guard?{_guardReady:true}:{})});
     recomputeStats();
@@ -3607,14 +3623,14 @@ function castSpell(sp,target){
   const gearMul=1+(elGearBonus[sp.element]||0)+(elGearBonus._all||0);
   let power=sp.dmg*elBoost*s.dmgMul*gearMul*masteryMul;
   power*=(1+0.05*G.hero.lvl);
-  // Eternal Ring: +X% damage per affinity level of the spell's element
+
   const elLvlDmg=effectTagSum('elementLevelDmg');
   if(elLvlDmg>0)power*=(1+elLvlDmg*elLvl);
   power*=rand(0.92,1.08);
   let critChance=s.crit+(sp.critBonus||0);
   let crit=gameRandom()<critChance;
   if(crit)power*=s.cdmg;
-  // Bloodfang: bloodUndeadFix nullifies the BLOOD_VS_UNDEAD penalty
+
   let bloodSuppressed=false;
   const undeadFix=effectTagSum('bloodUndeadFix')>0;
   if(isBlood&&isUndead&&!undeadFix)bloodSuppressed=true;
@@ -3645,7 +3661,7 @@ function castSpell(sp,target){
   if(sp.dot){
     const dotMul=elBoost*s.dmgMul*matchup*gearMul*masteryMul*(1+0.05*G.hero.lvl)
       *(1+elLvlDmg*elLvl)*(bloodSuppressed?BLOOD_VS_UNDEAD_MUL:1);
-    // A recast refreshes this spell's DoT; different spells stack normally.
+
     refreshEnemyDot(target,{spellId:sp.id,element:sp.element,dps:sp.dot.dps*dotMul,remaining:sp.dot.dur});
   }
   if(sp.burn)refreshEnemyDot(target,{spellId:sp.id,element:sp.element,dps:actualDamage*sp.burn.ratio/sp.burn.dur,remaining:sp.burn.dur});
@@ -3693,26 +3709,24 @@ function castSpell(sp,target){
   recordSpellNote(sp,sp.cost,actualDamage);
 }
 
-// ============================================================
-// LOOT / DEATH
-// ============================================================
+
+
+
 function rollGearDrop(e){
   if(e.isBoss){
     if(G.trial.inTrial){
-      // Trial boss drop -- tier scales with floor, not zoneIdx. Ascendant Forge
-      // adds +1 rarity bump per lv on top of the standard boss +2. Materials
-      // and treasure maps are awarded by awardTrialMaterials/checkTrialMilestone
-      // so we don't double-dip them here.
+
+
+
+
       const tier=trialGearTier(G.trial.floor);
       const ascForge=G.trial.upgrades.tu_forge||0;
       const item=rollGearForZone(tier,2+ascForge);
-      storeGear(item);
-      logLine(`** Trial drop: ${item.name} [${RARITIES[item.rarity].label}]`,'rank');
+      if(storeGear(item,true))logLine(`** Trial drop: ${item.name} [${RARITIES[item.rarity].label}]`,'rank');
       return;
     }
-    const item=rollGearForZone(G.zoneIdx,2); // boss: +2 rarity bumps
-    storeGear(item);
-    logLine(`** Boss drop: ${item.name} [${RARITIES[item.rarity].label}]`,'rank');
+    const item=rollGearForZone(G.zoneIdx,2);
+    if(storeGear(item,true))logLine(`** Boss drop: ${item.name} [${RARITIES[item.rarity].label}]`,'rank');
     G.treasureMaps+=1;
     G.materials.dust+=100+G.zoneIdx*50;
     if(G.zoneIdx>=2)G.materials.crystal+=20+G.zoneIdx*8;
@@ -3720,18 +3734,17 @@ function rollGearDrop(e){
     G.materials.herb=(G.materials.herb||0)+5+G.zoneIdx*3;
   } else if(gameRandom()<0.05){
     const item=rollGearForZone(G.zoneIdx,0);
-    storeGear(item);
-    logLine(`* ${item.name} [${RARITIES[item.rarity].label}]`,'loot');
+    if(storeGear(item,true))logLine(`* ${item.name} [${RARITIES[item.rarity].label}]`,'loot');
   }
 }
 function onEnemyDead(e){
-  // Explicit death entry point used by scripted encounters as well as combat.
+
   e.hp=0;settleDefeatedEnemies([e]);
 }
 function settleDefeatedEnemies(candidates){
   const dead=[...new Set(candidates)].filter(e=>e.hp<=0&&!e._rewarded);
   if(!dead.length)return;
-  // Pay the whole cast before a boss/level transition can replace the map.
+
   const s=G.baseStats;
   const rm=s.rewardMul||1;
   for(const e of dead){
@@ -3758,7 +3771,7 @@ function settleDefeatedEnemies(candidates){
     checkLevelUp();
     if(G.map!==map)return;
     if(!G.inDungeon&&!G.trial.inTrial){
-      // Finishing a side target must not replace the currently engaged foe.
+
       if(G.kills>=ZONES[G.zoneIdx].killsToBoss&&!G.bossActive&&!G.enemy)spawnBoss();
       else if(G.mobs.length===0)spawnMobs();
     }
@@ -3774,7 +3787,7 @@ function onBossKilled(){
     logLine(`> Unlocked: ${ZONES[G.unlocked].name}`,'rank');
   }
   checkLevelUp();
-  // Roll dungeon
+
   if(rollDungeonEntry())enterDungeon();
   else genMap();
 }
@@ -3789,9 +3802,9 @@ function onHeroDead(){
   G.gold-=lost;
   logLine(`You fall. -${fmtG(lost)}.`,'die');
   G.enemy=null;G.kills=Math.floor(G.kills*0.75);
-  // Death wipes the slate: buffs, ailments, and spell cooldowns all clear so
-  // afflictions don't pause through respawn. Recompute stats since the buff
-  // and ailment tables both feed into recomputeStats.
+
+
+
   const hadStateMods=G.buffs.length>0||G.hero.ailments.length>0;
   G.buffs=[];
   G.hero.ailments=[];
@@ -3819,16 +3832,16 @@ function checkLevelUp({allowDungeon=true}={}){
     logLine(`^ LEVEL ${G.hero.lvl}`,'lvl');
     const r=RANKS.find(x=>x.lvl===G.hero.lvl);
     if(r)logLine(`* ${r.name} -- ${r.perks.join(' | ')}`,'rank');
-    // Roll dungeon on level-up too
+
     if(allowDungeon&&rollDungeonEntry()&&!G.bossActive&&!G.enemy)enterDungeon();
   }
   if(G.hero.lvl>=10000)G.hero.xp=Math.min(G.hero.xp,xpForLevel(10000)-1);
   if(leveled){recomputeStats();G.hero.hp=G.hero.maxHp;G.hero.mana=G.hero.maxMana;}
 }
 
-// ============================================================
-// SPELLS / FORGE / SALVAGE / GEMS / ZONE / MANOR / TOWER / RESEARCH / GOLEMS / FAMILIARS
-// ============================================================
+
+
+
 function learnSpell(id){
   const sp=SPELLS.find(x=>x.id===id);
   if(!sp||!schoolUnlocked(sp.element)||G.knownSpells.includes(id)||G.gold<sp.learnCost)return;
@@ -3851,11 +3864,11 @@ function moveSlot(i,d){
   const t=G.equippedSpells[i];G.equippedSpells[i]=G.equippedSpells[j];G.equippedSpells[j]=t;
 }
 
-// Forge: combine 2 of same slot+tier+rarity -> +1 rarity item, same slot/tier
+
 function getForgeGroups(){
   const groups={};
   for(const item of G.gearInventory){
-    if(item.legendary)continue; // can't forge legendaries
+    if(item.legendary)continue;
     if(item.rarity==='legendary')continue;
     const key=`${item.slot}_${item.tier}_${item.rarity}`;
     if(!groups[key])groups[key]={slot:item.slot,tier:item.tier,rarity:item.rarity,items:[]};
@@ -3895,11 +3908,11 @@ function forgeCombine(slot,tier,rarity){
   const rIdx=RARITY_ORDER.indexOf(rarity);
   if(rIdx>=RARITY_ORDER.length-1)return;
   payCost(cost);
-  // Remove 2 items (the 2 worst)
+
   const sorted=[...items].sort((a,b)=>statsSum(a)-statsSum(b));
   const toRemove=[sorted[0].id,sorted[1].id];
   G.gearInventory=G.gearInventory.filter(i=>!toRemove.includes(i.id));
-  // Generate new item at next rarity
+
   const newItem=genGear(slot,tier,RARITY_ORDER[rIdx+1]);
   G.gearInventory.push(newItem);
   logLine(`* Forged: 2x ${RARITIES[rarity].label} -> ${newItem.name} [${RARITIES[newItem.rarity].label}]`,'rank');
@@ -3918,7 +3931,7 @@ function sortGear(list,mode){
     arr.sort((a,b)=>a.name.localeCompare(b.name));
   } else if(mode==='strength'){
     arr.sort((a,b)=>statsSum(b)-statsSum(a));
-  } else { // 'rarity' default -- rarity desc, then tier desc, statsSum tiebreak
+  } else {
     arr.sort((a,b)=>{
       const ra=RARITY_ORDER.indexOf(a.rarity),rb=RARITY_ORDER.indexOf(b.rarity);
       if(rb!==ra)return rb-ra;
@@ -3934,13 +3947,13 @@ function gearSellPrice(item){
   if(item.legendary)base*=10;
   return Math.floor(base);
 }
-function sellGear(itemId){
+function sellGear(itemId,returnGems=true){
   const idx=G.gearInventory.findIndex(i=>i.id===itemId);
-  if(idx<0)return;
+  if(idx<0||Object.values(G.gear).some(i=>i?.id===itemId))return;
   const item=G.gearInventory[idx];
   const gold=gearSellPrice(item);
   earnGold(gold);
-  refundGearGems(item);
+  if(returnGems)refundGearGems(item);
   G.gearInventory.splice(idx,1);
   logLine(`Sold ${item.name} for ${fmtG(gold)}`,'sys');
 }
@@ -3999,7 +4012,7 @@ function salvageGear(itemId){
   const idx=G.gearInventory.findIndex(i=>i.id===itemId);
   if(idx<0)return;
   const item=G.gearInventory[idx];
-  // Very low materials -- don't undermine golems
+
   const rIdx=RARITY_ORDER.indexOf(item.rarity);
   const dust=Math.floor(2+item.tier*2+rIdx*3);
   let crystal=0,gem=0;
@@ -4008,7 +4021,7 @@ function salvageGear(itemId){
   G.materials.dust+=dust;
   G.materials.crystal+=crystal;
   G.materials.gem+=gem;
-  // Refund any sockets (gems return to inventory)
+
   refundGearGems(item);
   G.gearInventory.splice(idx,1);
   let str=`Salvaged ${item.name}: +${dust} dust`;
@@ -4016,7 +4029,7 @@ function salvageGear(itemId){
   if(gem)str+=`, +${gem} gem`;
   logLine(str,'sys');
 }
-// Equip from inventory; swaps with currently equipped
+
 function equipFromInventory(itemId){
   const idx=G.gearInventory.findIndex(i=>i.id===itemId);
   if(idx<0)return;
@@ -4038,10 +4051,10 @@ function unequipGear(slot){
   logLine(`Unequipped: ${item.name}`,'sys');
 }
 
-// Gem socketing: pick a slot index on equipped gear, choose a gem from inventory
-// Socket modal -- shows ALL sockets at once with per-slot Remove buttons.
-// Inserts gems into the first empty slot. Re-renders in place after each action
-// so the player can manage every socket without reopening.
+
+
+
+
 function openSocketModal(itemRef){
   const wrap=document.createElement('div');
   wrap.className='modal-bg';
@@ -4122,7 +4135,7 @@ function openSocketModal(itemRef){
   wrap.appendChild(card);
   document.body.appendChild(wrap);
 }
-// Combine 2 same-type same-level gems -> +1 level
+
 function combineGems(typeId,level){
   if(level>=5)return;
   const id=gemId(typeId,level);
@@ -4157,9 +4170,9 @@ function buyBuilding(id){
   recomputeStats();
   logLine(`${b.name} -> lv ${G.buildings[id]}`,'sys');
 }
-// Tower: generates a guaranteed-rarity item (gold-only cost). Tier is auto-set
-// to player's highest unlocked zone (capped at 5). Rarities offered: common,
-// uncommon, rare, epic -- never legendary (that's its own tab).
+
+
+
 function towerCost(tier,rarity){
   const rIdx=RARITY_ORDER.indexOf(rarity);
   return Math.floor(150*Math.pow(5,tier)*Math.pow(3,rIdx));
@@ -4245,9 +4258,9 @@ function tickGolems(){
   }
 }
 
-// ============================================================
-// RITUAL -- passive XP channel; partial fork to equipped-spell elements
-// ============================================================
+
+
+
 function ritualCfg(){return RITUAL_INTENSITY.find(r=>r.id===G.ritual.intensity)||RITUAL_INTENSITY[0];}
 function ritualEquippedElements(){
   const els=new Set();
@@ -4338,9 +4351,9 @@ function dismissFamiliar(idx){
   logLine(`Dismissed ${f.name}.`,'sys');
 }
 
-// ============================================================
-// CRUSADE / AWAKENING (Spark = +1 per Awakening only, scaled)
-// ============================================================
+
+
+
 function startCrusade(key){
   if(G.crusade.active)return;
   const o=CRUSADE_OPTS[key];if(!o)return;
@@ -4356,7 +4369,7 @@ function startCrusade(key){
       dust:Math.floor(50*o.mul*rand(0.8,1.2)),
       crystal:o.mul>=9?Math.floor(8*o.mul):0,
       gem:o.mul>=280?5:0,
-      // No spark from crusade either -- only from awakening
+
     },
   };
   logLine(`Crusade: ${o.name}`,'sys');
@@ -4398,6 +4411,7 @@ function awaken(){
   if(!canAwaken()){logLine(`Awakening: ${awakeningRequirement()}.`,'sys');return;}
   const projectedSpark=previewSpark();
   if(!confirm(`Awaken now for +${projectedSpark} Spark? Most progress resets. Enemies and rewards grow each cycle.`))return;
+  clearGearSaleDialog(false,false);cancelGemDisposal();resetAutoSellSummary();cancelBulkSale();
   settleExpeditionFight();
   resetExpeditionJourney();resetMagicTransient();
   G.awakenCount=(G.awakenCount||0)+1;
@@ -4423,8 +4437,8 @@ function awaken(){
   ELEMENTS.forEach(e=>{G.elements[e]=0;G.elementXp[e]=0;});
   BUILDINGS.forEach(b=>G.buildings[b.id]=0);
   G.golems={dust:0,crystal:0,gem:0,herb:0};
-  // Alchemy: keep skill (lvl/xp), cabinet, and all auto-* UI preferences as
-  // meta-progression (mirrors spellMastery). Clear only in-flight brew slots.
+
+
   G.alchemy.brewSlots=[];
   if(!keepFamiliars)G.familiars=[];
   if(!keepGear){
@@ -4437,7 +4451,7 @@ function awaken(){
   if(!keepResearch)G.researchCompleted={};
   G.researchActive=null;G.crusade={active:null};
   G.ritual={active:false,intensity:1};
-  // Trials: keep persistent fields, reset run state
+
   G.trial.inTrial=false;
   G.trial.floor=1;
   G.trial.trialReturn=null;
@@ -4457,9 +4471,9 @@ function buyAwakening(id){
   logLine(`* Awakening: ${node.name}`,'rank');
 }
 
-// ============================================================
-// IDLE
-// ============================================================
+
+
+
 function estimateIdleCombat(casts,actions,s,avg,d){
   const enemyHp=avg.hp*d.enemyHp*ENEMY_HP_SCALE,baseDefense=avg.def*d.enemyDef/2;
   const gems=elementBonusFromGear();
@@ -4472,8 +4486,8 @@ function estimateIdleCombat(casts,actions,s,avg,d){
     return {sp,rate,mul,raw,hit};
   });
   const staffHit=defense=>Math.min(enemyHp,Math.max(1,s.atk-defense)*s.dmgMul*(1+s.crit*(s.cdmg-1)));
-  // Conditions begin after a successful cast. Half the estimated encounter is
-  // a conservative average remaining lifetime, and lethal hits grant no uptime.
+
+
   const directDps=records.reduce((total,r)=>total+r.hit*r.rate,0)+Math.max(0,actions)*staffHit(baseDefense);
   const lifetime=enemyHp/Math.max(1,directDps);
   const conditionUptime=id=>Math.min(1,records.reduce((total,r)=>
@@ -4484,8 +4498,8 @@ function estimateIdleCombat(casts,actions,s,avg,d){
   for(const {sp,rate,mul,raw} of records){
     let hit=Math.min(enemyHp,Math.max(1,raw-(sp.truedmg?0:defense)));
     if(sp.execute&&hit<enemyHp*sp.execute.threshold){
-      // Only the finishing fraction of a sufficiently long fight benefits.
-      // An already lethal strike never gains an extra kill or damage credit.
+
+
       const multiplier=1/(1-sp.execute.threshold+sp.execute.threshold/sp.execute.mul);
       hit=Math.min(enemyHp,hit*multiplier);
     }
@@ -4497,15 +4511,15 @@ function estimateIdleCombat(casts,actions,s,avg,d){
     }
     if(sp.burn&&remainingHp>0){
       const uptime=Math.min(1,rate*Math.min(sp.burn.dur,lifetime/2));
-      // Spark's burn is a fraction of damage that actually landed, spread over
-      // its duration. Refreshes replace the burn; overkill cannot seed a DoT.
+
+
       dot+=Math.min(hit*sp.burn.ratio/sp.burn.dur*uptime,remainingHp*rate);
     }
     dot=Math.min(dot,remainingHp*rate);
     dps+=hit*rate+dot;dotDps+=dot;
     healing+=hit*rate*((sp.leech||0)+(sp.element==='blood'?BLOOD_LEECH_BASE:0)+effectTagSum('bonusLeech'));
-    // Splash, chains, reactions and harvested DoT damage require real targets
-    // and a cast sequence. They receive no fabricated extra damage here.
+
+
   }
   for(const {sp,rate} of casts)if(sp.type==='heal')healing+=rate*spellHealAmount(sp);
   const incoming=Math.max(1,avg.atk*d.enemyAtk*ENEMY_ATK_SCALE-s.def/2)*avg.spd*(1-0.40*chillUptime);
@@ -4518,17 +4532,17 @@ function applyIdle(seconds){
   if(expeditionActive())return applyExpeditionIdle(elapsed,seconds);
   if(typeof ageMagic==='function')ageMagic(elapsed,seconds);
   advanceLegacyCrusade(Date.now());
-  // The reward estimate covers the absence. Age every existing enemy effect
-  // without replaying damage or kill rewards when the live encounter resumes.
-  // An engaged enemy normally also belongs to mobs, so visit each object once.
+
+
+
   for(const enemy of new Set([...G.mobs,...(G.enemy?[G.enemy]:[])])){
     enemy.dotTimers=(enemy.dotTimers||[]).map(dot=>({...dot,remaining:Math.max(0,dot.remaining-elapsed)})).filter(dot=>dot.remaining>0);
     enemy.statuses=Object.fromEntries(Object.entries(enemy.statuses||{})
       .map(([id,remaining])=>[id,Math.max(0,remaining-elapsed)]).filter(([,remaining])=>remaining>0));
     enemy.slowed=Math.max(0,(enemy.slowed||0)-elapsed);
   }
-  // Build average effects without installing estimated casts into live state.
-  // A potion that expires during an absence still helps for its remaining time.
+
+
   const oldBuffs=G.buffs.map(b=>({...b})),initialMana=G.hero.mana;
   const remainingBuffs=oldBuffs.map(b=>({...b,dur:b.dur-elapsed})).filter(b=>b.dur>0);
   G.buffs=[];
@@ -4551,8 +4565,8 @@ function applyIdle(seconds){
   }
   const cooldown=sp=>Math.max(TICK_S,sp.cd*Math.max(0.1,1-effectTagSum('cdMul')));
   let actions=s.spd,supportMana=0,healing=0;
-  // Free mana support establishes the pool both ritual and combat must share.
-  // Buff spells wait for their effect to expire before being cast again.
+
+
   for(const sp of support.filter(sp=>sp.cost===0&&sp.buff.stat==='manaRegen')){
     const duration=sp.buff.dur*masteryBonus(sp.id);
     const rate=Math.min(actions,1/Math.max(cooldown(sp),duration));
@@ -4584,7 +4598,7 @@ function applyIdle(seconds){
     casts.push({sp,rate});
     if(sp.buff){
       const uptime=Math.max(priorUptime(sp.id),Math.min(1,rate*sp.buff.dur*masteryBonus(sp.id)));
-      // Damage spells can also grant utility, such as Tempest's speed.
+
       addEffect(sp.buff.stat,sp.buff.amt*uptime);
       if(sp.buff.stat==='spd')actions+=sp.buff.amt*uptime;
     }
@@ -4654,8 +4668,8 @@ function advanceIdleProjects(seconds){
     const active=G.researchActive,speed=Math.max(0.01,G.baseStats.researchSpeed||1);
     const researchBoundary=active?Math.max(0,active.timeLeft)/speed:Infinity;
     const segment=Math.min(remaining,researchBoundary),slots=G.alchemy.brewSlots;
-    // Batch identical perfect brews only while the current research speed is
-    // fixed. A research completion is always processed before a later batch.
+
+
     const recipe=isAutoBrew()?getRecipe(G.alchemy.autoBrew):null;
     if(slots.length&&G.alchemy.lvl===ALCHEMY_LVL_CAP&&recipe?.brewTime>0&&
        slots.every(slot=>slot.id===recipe.id&&slot.timeLeft>0&&slot.timeLeft<=recipe.brewTime)){
@@ -4676,7 +4690,7 @@ function advanceIdleProjects(seconds){
         if(active)active.timeLeft=Math.max(0,active.timeLeft-elapsed*speed);
         remaining=Math.max(0,remaining-elapsed);
         logLine(`Brewed ${fmt(count)} ${recipe.name} Q100 while away.`,'loot');
-        // Fall through when the research boundary coincides with this batch.
+
         if(!active||active.timeLeft>0.0001)continue;
       }
     }
@@ -4691,17 +4705,17 @@ function advanceIdleProjects(seconds){
     if(active&&active.timeLeft<=0.0001){G.researchCompleted[active.id]=true;G.researchActive=null;recomputeStats();completedResearch=true;}
     const finished=G.alchemy.brewSlots.filter(slot=>slot.timeLeft<=0.0001);
     G.alchemy.brewSlots=G.alchemy.brewSlots.filter(slot=>slot.timeLeft>0.0001);
-    // Fill once after the entire simultaneous completion group. This also
-    // prevents instant recipes from recursively refilling each completed slot.
+
+
     const brewingGuard=_autoBrewInFlight;_autoBrewInFlight=true;
     try{for(const slot of finished)completeBrew(slot.id);}finally{_autoBrewInFlight=brewingGuard;}
     if(completedResearch||finished.length){queueResearch();queueBrews();}
     else if(elapsed===0)break;
   }
 }
-// "While you were away" modal -- shown after importing a save that's been idle
-// for > 60s. Surfaces offline gains visually rather than burying them in the
-// log scrollback, which is the genre's standard retention lever.
+
+
+
 let _offlineGainsDialog=null,_pendingOfflineGains=null,_offlineReportDirty=false;
 function clearOfflineGains(restoreFocus=false){
   const prior=_offlineGainsDialog?.focusedBefore;
@@ -4722,8 +4736,8 @@ function showOfflineGains(summary){
   renderOfflineGains();
 }
 function renderOfflineGains(){
-  // Keep only summary data while hidden or while the player is managing a save.
-  if(!_pendingOfflineGains||!_offlineReportDirty||document.hidden||_pageHidden||_loopSuspended||_saveDialogClose)return;
+
+  if(!_pendingOfflineGains||!_offlineReportDirty||document.hidden||_pageHidden||_loopSuspended||_saveDialogClose||_gearSaleDialog)return;
   if(!_offlineGainsDialog){
     const wrap=document.createElement('div');
     wrap.className='modal-bg';
@@ -4764,16 +4778,16 @@ function renderOfflineGains(){
     ${totals.estimateNote?`<p class="sub">${asciiHTML(totals.estimateNote)}</p>`:''}`;
 }
 
-// ============================================================
-// SAVE / LOAD
-// ============================================================
-// Base64 wraps UTF-8 bytes, independently of the fonts used to display labels.
-// Normalize clipboard wrapping, URL-safe alphabet, and omitted padding for
-// both current UTF-8 saves and older direct Latin-1 saves.
+
+
+
+
+
+
 function utf8ToB64(s){
   const bytes=new TextEncoder().encode(s);
   let bin='';
-  // chunked to keep String.fromCharCode arg list small on older engines
+
   const CHUNK=0x8000;
   for(let i=0;i<bytes.length;i+=CHUNK){
     bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+CHUNK));
@@ -4794,12 +4808,12 @@ function b64ToUtf8(s){
 function exportSave(){
   settleClockForAction();
   const d={
-    v:29,speed:gameSpeed(),clockDebt:Math.min(_tickAccumulator,IDLE_CAP_HOURS*3600),
+    v:29,speed:gameSpeed(),autoSell:G.autoSell,clockDebt:Math.min(_tickAccumulator,IDLE_CAP_HOURS*3600),
     rng:G.rng??123456789,magic:G.magic,expeditions:G.expeditions,world:worldCheckpoint(),
     gold:G.gold, spark:G.spark, materials:G.materials,
     hero:{lvl:G.hero.lvl,xp:G.hero.xp,hp:G.hero.hp,mana:G.hero.mana,alive:G.hero.alive,respawnIn:G.hero.respawnIn,ailments:G.hero.ailments||[]},
     zoneIdx:G.zoneIdx, unlocked:G.unlocked, kills:G.kills,
-    inDungeon:false, // reset dungeon state on save
+    inDungeon:false,
     knownSpells:G.knownSpells, equippedSpells:G.equippedSpells,
     spellCd:G.spellCd, buffs:G.buffs,
     elements:G.elements, elementXp:G.elementXp,
@@ -4835,8 +4849,8 @@ function exportSave(){
   G.savedAt=d.savedAt;
   return code;
 }
-// Saves are player-owned data. Validate into fresh objects before touching the
-// running game; an invalid paste must never partly replace a character.
+
+
 let lastSaveError='';
 function buildImportedState(d,now=Date.now()){
   const obj=(value,label)=>{
@@ -4868,8 +4882,8 @@ function buildImportedState(d,now=Date.now()){
     for(const item of items)out[item.id]=num(source[item.id],0,label+' '+item.id,item.max||1e9,0,true);
     return out;
   };
-  // Reject prototype keys everywhere, including otherwise ignored fields. This
-  // also bounds pathological nesting before any recursive or rendering work.
+
+
   let nodes=0;
   function inspect(value,depth=0){
     if(++nodes>2000000||depth>18)throw Error('Save structure is too large.');
@@ -4890,8 +4904,8 @@ function buildImportedState(d,now=Date.now()){
   const lvl=num(hero.lvl,1,'hero level',10000,1,true);
   let xp=num(hero.xp,0,'hero experience');
   if(version<27){
-    // v27 changes the level curve. Preserve the earned level and the fraction
-    // of the next level, so old exponential XP does not award hundreds of levels.
+
+
     const oldRequirement=Math.floor(10*Math.pow(1.32,lvl-1));
     xp=Math.min(0.999999,xp/oldRequirement)*xpForLevel(lvl);
   }
@@ -4974,7 +4988,7 @@ function buildImportedState(d,now=Date.now()){
   }
   const bestFloor=num(trial.bestFloor,0,'best trial floor',100000,0,true);
   const milestonesAwarded=flags(trial.milestonesAwarded,TRIAL_MILESTONES.map(m=>m.floor),'Trial milestones');
-  // Older saves predate milestone payouts; acknowledge those already passed.
+
   if(version<27)for(const m of TRIAL_MILESTONES)if(bestFloor>=m.floor)milestonesAwarded[m.floor]=true;
   const alchemyLvl=num(alchemy.lvl,1,'alchemy level',ALCHEMY_LVL_CAP,1,true);
   const potions={},autoDrink={},autoCure={};
@@ -5015,8 +5029,8 @@ function buildImportedState(d,now=Date.now()){
     return {stat:source.stat,amt:num(b.amt,source.amt*q,'buff amount',maxAmt),dur:num(b.dur,maxDur,'buff duration',maxDur),
       ...(p?{_potionId:p.id,_q:q,name:text(b.name,p.name)}:{_spellId:s.id}),
       ...(orbital?{_inscription:'orbital'}:{}),...(suspended?{_suspended:true}:{}),
-      // A v27 ward had only a defense buff. Missing or older readiness must
-      // never turn into a fresh next-hit guard when a save is restored.
+
+
       ...(!p&&s?.guard?{_guardReady:version>=28&&b._guardReady===true}:{})};
   }).filter(Boolean);
   const ailments=list(hero.ailments,'ailments',Object.keys(AILMENT_TYPES).length).map(raw=>{
@@ -5068,6 +5082,7 @@ function buildImportedState(d,now=Date.now()){
     rates:{goldDelta60:[],xpDelta60:[],killTimes60:[],dmgDealt60:[],_lastSnapGold:0,_lastSnapXp:0,_lastSnapT:now,_windowStart:now},
     ui:{density:ui.density==='compact'?'compact':'comfortable',settingsOpen:ui.settingsOpen===true,zonesExpanded:ui.zonesExpanded===true,worldView:ui.worldView==='map'?'map':'scene',spellSchool:ELEMENTS.includes(ui.spellSchool)?ui.spellSchool:'all',spellMode:['all','known','learnable','target','ritual'].includes(ui.spellMode)?ui.spellMode:'all'},
     speed:GAME_SPEEDS.includes(d.speed)?d.speed:1,
+    autoSell:normalizeAutoSell(d.autoSell),
     savedAt:Math.min(now,num(d.savedAt,now,'save date',8640000000000000)),
   };
   state.rng=num(d.rng,123456789,'random state',4294967295,0,true);
@@ -5093,7 +5108,7 @@ function importSave(str){
     catch(_){
       try{
         d=JSON.parse(decodeBase64(str.trim()));
-        // Current saves must be valid UTF-8; never turn damaged bytes into labels.
+
         if((d?.v??1)>=29)throw Error('Invalid UTF-8 save.');
       }
       catch(_){throw Error('That code could not be read. Copy the complete exported save code and try again.');}
@@ -5101,7 +5116,7 @@ function importSave(str){
     const save=buildImportedState(d);
     Object.assign(G,save.state);GEAR_ID_COUNTER=save.gearIdCounter;committed=true;
     recomputeStats();
-    // Multipliers can overflow even when every individual input is finite.
+
     if(Object.values(G.baseStats).some(v=>typeof v==='number'&&!Number.isFinite(v)))throw Error('Character stats exceed supported limits.');
     restoreWorld(save.world);
     const elapsed=Math.max(0,Math.floor((Date.now()-save.savedAt)/1000));
@@ -5120,7 +5135,7 @@ function importSave(str){
     _tickAccumulator=save.clockDebt-debt;
     if(save.legacy)logLine(`Pre-v5 save (v${save.version}): old wardrobe, gems and legendaries reset; other progress preserved.`,'sys');
     if(save.version<27)logLine('Progress migrated to the new level curve; your level and next-level progress are preserved.','sys');
-    cancelBulkSale();logLine('Save imported.','sys');
+    clearGearSaleDialog(false,false);cancelGemDisposal();resetAutoSellSummary();cancelBulkSale();logLine('Save imported.','sys');
     clearOfflineGains();
     showOfflineGains(summary);
     return true;
@@ -5136,9 +5151,9 @@ function importSave(str){
   }
 }
 
-// ============================================================
-// HELPERS
-// ============================================================
+
+
+
 function fmtStatVal(k,v){
   if(typeof v!=='number')return String(v);
   if(k.includes('Mul')||k==='goldFind'||k==='crit'||k==='spd')return `+${(v*100).toFixed(0)}%`;
@@ -5156,8 +5171,8 @@ function fmtStatDelta(k,d){
 function statsLine(stats){
   return Object.entries(stats).map(([k,v])=>`${k}: ${fmtStatVal(k,v)}`).join(' | ');
 }
-// Build the side-by-side comparison text shown by the inventory hover tooltip.
-// Monospace + white-space:pre on the tooltip handles column alignment.
+
+
 function gearCompareText(item){
   const eq=G.gear[item.slot];
   const r=RARITIES[item.rarity];
@@ -5181,8 +5196,8 @@ function gearCompareText(item){
   lines.push(`vs equipped: ${gearLabel(eq)}`);
   lines.push(`             T${eq.tier} ${er.label}${eq.sockets.length?` | ${eq.sockets.length} socket${eq.sockets.length>1?'s':''}`:''}`);
   lines.push('');
-  // Union of stat keys, ordered by absolute delta so the biggest swings sit
-  // at the top of the table.
+
+
   const keys=[...new Set([...Object.keys(item.stats),...Object.keys(eq.stats)])];
   keys.sort((a,b)=>Math.abs((item.stats[b]||0)-(eq.stats[b]||0))-Math.abs((item.stats[a]||0)-(eq.stats[a]||0)));
   const longest=keys.reduce((m,k)=>Math.max(m,k.length),0);
@@ -5222,10 +5237,10 @@ function gearLabel(item){
   return s;
 }
 
-// ============================================================
-// RENDER
-// ============================================================
-// ----- Map hover tooltips ---------------------------------------------------
+
+
+
+
 function mobTooltip(m){
   const r=m.ref;
   const conditions=enemyConditions(m);
@@ -5269,8 +5284,8 @@ function lootTooltip(l){
   const detail=(l.gold||l.xp)?`Claimed: +${fmt(l.gold||0)} g | +${fmt(l.xp||0)} xp`:'';
   return [head,detail,`Decays in ${Math.ceil(l.ttl)}s`].filter(Boolean).join('\n');
 }
-// Preserve visible Unicode. Show invisible controls explicitly so imported
-// labels cannot hide text or change the direction of surrounding interface text.
+
+
 function asciiText(value){
   return Array.from(String(value??''),ch=>{
     const code=ch.codePointAt(0);
@@ -5312,7 +5327,7 @@ function renderMap(){
     html+='\n';
   }
   $('map').innerHTML=html;
-  // State banners
+
   if(G.inDungeon){
     $('dungeon-banner-wrap').innerHTML=`<div class="dungeon-banner">^ TREASURE DUNGEON | ${Math.ceil(G.dungeonTimeLeft)}s left | ${G.chests.filter(c=>!c.opened).length} chests</div>`;
   } else if(G.trial.inTrial){
@@ -5332,17 +5347,17 @@ function renderTop(){
   $('r-gold').textContent=fmt(G.gold);
   $('r-mana').textContent=`${Math.floor(G.hero.mana)}/${G.hero.maxMana}`;
   $('r-spark').textContent=fmt(G.spark);
-  // Inline /sec chips next to gold and XP -- the idle heartbeat the genre runs on
+
   const gps=$('r-gold-rate'),xps=$('r-xp-rate');
   if(gps){gps.textContent=`+${fmt(Math.round(rates.goldPerSec))}/s`;gps.classList.toggle('zero',rates.goldPerSec<1);}
   if(xps){xps.textContent=`+${fmt(Math.round(rates.xpPerSec))}/s`;xps.classList.toggle('zero',rates.xpPerSec<1);}
-  // The old tick counter is replaced with a more useful AFK summary -- kills/min
-  // and DPS if active, falling back to rank progress otherwise.
+
+
   let tickInfo;
   if(rates.killsPerMin>0)tickInfo=`> ${Math.round(rates.killsPerMin)} kills/min | ${fmt(Math.round(rates.dps))} dps`;
   else tickInfo=nx?`Next rank: ${nx.name} (lvl ${nx.lvl} | ${nx.lvl-G.hero.lvl} to go)`:'Max rank';
   $('r-tick').textContent=tickInfo;
-  // Status chips in the second row: buffs count, ailments count, auto-explore state
+
   const buffCount=G.buffs.length, ailCount=(G.hero.ailments||[]).length;
   const sb=$('status-buffs');if(sb){sb.style.display=buffCount?'inline-flex':'none';$('buff-count').textContent=buffCount;}
   const sa=$('status-ailments');if(sa){sa.style.display=ailCount?'inline-flex':'none';$('ailment-count').textContent=ailCount;}
@@ -5353,9 +5368,9 @@ function renderTop(){
     $('autoexp-state').textContent='EXPEDITION';
     $('btn-auto').disabled=true;$('btn-regen').disabled=true;
   }else{$('btn-auto').disabled=false;$('btn-regen').disabled=false;}
-  // Materials live up here too so dust/crystal/gem/herb are visible on every tab
+
   const mt=$('mat-strip-top');if(mt)mt.innerHTML=matStripHTML();
-  // Zone-pane title + subhead
+
   const Z=ZONES[G.zoneIdx];
   const assignmentRegion=assignment?uiExpeditionRegions().find(r=>r.id===assignment.id):null;
   $('autoexp-label').textContent=assignmentRegion?'Assignment':'Exploring';
@@ -5369,9 +5384,9 @@ function renderTop(){
   else $('kills-sub').textContent=`${G.kills}/${Z.killsToBoss}`+(G.bossActive?' * DRAGON':'')+(lc?` | ${lc} chest${lc>1?'s':''}`:'');
   updateInterfaceChrome();
 }
-// ============================================================
-// IDLE DASHBOARD RENDERS -- rates / next-up / target intel / spell hotbar
-// ============================================================
+
+
+
 function renderRates(){
   const r=currentRates();
   const fmtRate=(v,suffix='/s')=>`${fmt(Math.round(v))}${suffix}`;
@@ -5389,8 +5404,8 @@ function renderRates(){
   $('rates-window-lbl').textContent=`last ${r.windowSec}s`;
 }
 function renderNextUp(){
-  // The "what's coming" surface -- collects near-term goals across the game's
-  // systems so a player doesn't have to tab around to figure out next steps.
+
+
   const items=[];
   const nx=nextRank();
   if(nx){
@@ -5398,7 +5413,7 @@ function renderNextUp(){
     items.push({icn:'^',lbl:`Next rank: <b>${nx.name}</b><span class="sub">${nx.perks.join(' | ')}</span>`,
                 toGo:`${togo} lvl${togo===1?'':'s'}`,ready:togo<=0});
   }
-  // Next zone unlock -- uses G.unlocked + ZONES table
+
   for(let i=G.unlocked+1;i<ZONES.length;i++){
     const z=ZONES[i];
     if(!z)break;
@@ -5407,25 +5422,25 @@ function renderNextUp(){
                 toGo:'DRAGON',ready:false});
     break;
   }
-  // Next boss progress in current zone
+
   if(!G.inDungeon&&!G.trial.inTrial&&!G.expeditions?.active){
     const Z=ZONES[G.zoneIdx];const togo=Math.max(0,Z.killsToBoss-G.kills);
     if(togo>0)items.push({icn:'/',lbl:`Boss spawn: <b>${Z.boss.name}</b>`,toGo:`${togo} kills`,ready:false});
     else if(G.bossActive)items.push({icn:'/',lbl:`<b>${Z.boss.name}</b> awaits`,toGo:'DRAGON',ready:true});
   }
-  // Next alchemy lvl
+
   if(isAlchemyUnlocked()&&G.alchemy.lvl<ALCHEMY_LVL_CAP){
     const need=xpForAlchemyLevel(G.alchemy.lvl+1);const have=G.alchemy.xp;
     items.push({icn:'U',lbl:`Alchemy Lv <b>${G.alchemy.lvl+1}</b><span class="sub">${G.alchemy.lvl+1===100?'perfect brews unlock':((G.alchemy.lvl+1)%25===0?'+1 brew slot':'+ recipes')}</span>`,
                 toGo:`${fmt(need-have)} xp`,ready:false});
   }
-  // Next research project
+
   if(isResearchUnlocked()&&G.researchActive){
     const ra=G.researchActive;
     const project=RESEARCH_PROJECTS.find(r=>r.id===ra.id);
     items.push({icn:'?',lbl:`Researching: <b>${project?project.name:ra.id}</b>`,toGo:`${Math.ceil(ra.timeLeft/(G.baseStats.researchSpeed||1))}s`,ready:false});
   }
-  // Current trial floor if active
+
   if(G.trial.inTrial)items.push({icn:'^',lbl:`Trial Floor <b>${G.trial.floor}</b>`,toGo:`best F${G.trial.bestFloor}`,ready:false});
   if(G.expeditions?.active){
     const active=G.expeditions.active,region=uiExpeditionRegions().find(r=>r.id===active.id);
@@ -5467,15 +5482,15 @@ function renderTargetIntel(){
       <div class="condition-head"><span class="condition-name">[${conditionMarkers[condition.id]||'!'}] ${asciiHTML(condition.name)}</span><span class="condition-time">${Math.max(0,condition.remaining).toFixed(1)}s</span></div>
       <div class="condition-description">${asciiHTML(condition.description)}</div>
     </div>`).join('')}</div>`:'';
-  // Affinity matchups -- show how every element our hero can cast resolves
-  // against this target's element, so the player can pick the right spell.
+
+
   const muHtml=uiVisibleSchools().map(el=>{
     const m=elMul(el,ref.el);
     const cls=m>1.05?'strong':m<0.95?'weak':'';
     if(!cls)return '';
     return `<span class="mu ${cls}" title="${el} -> ${uiSchoolUnlocked(ref.el)?ref.el:'unknown'}: x${m.toFixed(2)}">${EL_INFO[el].glyph} ${el.slice(0,3)}</span>`;
   }).filter(Boolean).join('');
-  // Drop preview -- gold/xp at this moment with current find/mul modifiers
+
   const s=G.baseStats,rm=s.rewardMul||1;
   const goldExp=Math.ceil(ref.gold*s.goldFind*rm);
   const xpExp=Math.ceil(ref.xp*s.xpMul*rm);
@@ -5517,7 +5532,7 @@ function renderSpellHotbar(){
 let _lastStatsHash='';
 function renderHero(){
   const h=G.hero,s=G.baseStats;
-  // Bars + textContent are cheap direct DOM property updates
+
   $('hp-fill').style.width=(h.hp/h.maxHp*100)+'%';
   $('mana-fill').style.width=(h.mana/h.maxMana*100)+'%';
   $('xp-fill').style.width=(h.xp/xpForLevel(h.lvl)*100)+'%';
@@ -5550,7 +5565,7 @@ function renderHero(){
     }
     return `<span class="buff-pill" style="border-color:var(--${c.color});color:var(--${c.color})" title="${c.desc}">${c.icon} ${c.name} ${parts.join(', ')}${mul>1?' x2':''}</span>`;
   }).join('');
-  // Ailment pills come first so the player sees threats before buffs.
+
   const ailmentPills=(G.hero.ailments||[]).map(a=>{
     const t=AILMENT_TYPES[a.id];if(!t)return '';
     const dotStr=a.dps?` | ${a.dps.toFixed(1)} dps`:'';
@@ -5561,16 +5576,16 @@ function renderHero(){
     const label=b.name||(sp?sp.name:b.stat);
     return `<span class="buff-pill">${asciiHTML(label)} | ${b.dur.toFixed(1)}s</span>`;
   }).join('')+comboPills;
-  // Layer-2 visual cue: hero panel pulses red whenever any ailment is active.
+
   const hp=$('hero-panel');
   if(hp)hp.classList.toggle('ailing',(G.hero.ailments||[]).length>0);
-  // Stats grid: sectioned (Combat / Idle), 3-column, with defaults dimmed so
-  // the eye locks onto stats the player has actually built up.
+
+
   const sh=`${s.atk.toFixed(1)}|${s.def}|${s.spd.toFixed(2)}|${s.manaRegen.toFixed(1)}|${s.crit.toFixed(2)}|${s.cdmg.toFixed(2)}|${s.dmgMul.toFixed(2)}|${s.goldFind.toFixed(2)}|${s.xpMul.toFixed(2)}|${s.researchSpeed.toFixed(2)}|${(s.goldPerSec||0)}|${(s.chestBonus||0)}|${(s.elXpMul||1).toFixed(2)}|${(s.ritualMul||1).toFixed(2)}`;
   if(sh===_lastStatsHash)return;
   _lastStatsHash=sh;
-  // A stat is "at baseline" when it matches the spec value (x1.00, +0, etc).
-  // dim() marks the row so its label and value both fade out 60%.
+
+
   const dim=(isDefault)=>isDefault?' dim':'';
   $('stats').innerHTML=`
     <div class="section">Combat</div>
@@ -5592,9 +5607,9 @@ function renderHero(){
   `;
 }
 function renderLog(){
-  // Length-based memo broke once G.log saturated at 120 (the cap) -- every new
-  // logLine push+shift kept length stable, so the check thought "no change" and
-  // the feed froze. Use a dirty flag set by logLine instead.
+
+
+
   if(!_logDirty)return;
   _logDirty=false;
   const el=$('log');
@@ -5602,9 +5617,9 @@ function renderLog(){
   el.scrollTop=el.scrollHeight;
 }
 function renderZones(){
-  // Show unlocked zones + the next locked one as a teaser. Anything beyond the
-  // teaser is folded into a single "> N more zones locked" row that the player
-  // can click to expand -- keeps the right column from being a wall of teasers.
+
+
+
   const teaserIdx=G.unlocked+1;
   const showThrough=G.ui?.zonesExpanded?ZONES.length-1:Math.min(teaserIdx,ZONES.length-1);
   const visible=ZONES.slice(0,showThrough+1);
@@ -5632,8 +5647,8 @@ function renderZones(){
   if(fold)fold.onclick=()=>{G.ui=G.ui||{};G.ui.zonesExpanded=!G.ui.zonesExpanded;renderZones();};
 }
 function rankTooltip(){
-  // Hover summary attached to the RANK chip in the top bar. Replaces the
-  // dedicated Mage Rank panel that used to live in the right column.
+
+
   const r=currentRank(),nx=nextRank();
   let s=`${r.name} -- ${r.perks.join(' | ')}`;
   if(nx)s+=`\nNext: ${nx.name} at lvl ${nx.lvl} (${r.perks===nx.perks?'':nx.perks.join(' | ')})`;
@@ -5675,9 +5690,9 @@ function renderKnownSpells(){
   let html='';
   for(const e of visibleEls){
     const elSpells=known.filter(sp=>sp.element===e).sort((a,b)=>a.learnCost-b.learnCost);
-    if(elSpells.length===0)continue; // skip elements with nothing learned
+    if(elSpells.length===0)continue;
     const key='spellbook:'+e;
-    const collapsed=G.uiCollapsed[key]!==false; // default collapsed
+    const collapsed=G.uiCollapsed[key]!==false;
     const equippedCount=elSpells.filter(sp=>G.equippedSpells.includes(sp.id)).length;
     html+=`<div class="el-group">
       <div class="el-group-header" data-toggle-spellbook="${e}" role="button" tabindex="0" aria-expanded="${!collapsed}" aria-label="${EL_INFO[e].name} spells">
@@ -5778,14 +5793,14 @@ function renderElements(){
   mh+='   <b>Blood</b>: 20% lifesteal | 0.3x vs <span class="w">undead</span>.';
   if(uiSchoolUnlocked('arcane'))mh+='   <span class="el arcane">arcane</span>: neutral (no matchup).';
   $('matchup').innerHTML=mh;
-  // Collapsible per-element groups for learnable spells
+
   const learnable=SPELLS.filter(sp=>!G.knownSpells.includes(sp.id));
   let html='';
   for(const e of visibleEls){
     const elSpells=learnable.filter(sp=>sp.element===e).sort((a,b)=>a.learnCost-b.learnCost);
     const totalEl=SPELLS.filter(sp=>sp.element===e).length;
     const knownEl=totalEl-elSpells.length;
-    const collapsed=G.uiCollapsed[e]!==false; // default collapsed (true)
+    const collapsed=G.uiCollapsed[e]!==false;
     const empty=elSpells.length===0;
     html+=`<div class="el-group ${empty?'locked':''}">
       <div class="el-group-header" data-toggle-el="${e}">
@@ -5882,7 +5897,7 @@ function renderSetBonuses(){
 }
 function renderGear(){
   renderSetBonuses();
-  // Equipped slots
+
   let html='';
   for(const slot of GEAR_SLOTS){
     const item=G.gear[slot];
@@ -5919,7 +5934,7 @@ function renderGear(){
     };
   });
 
-  // Forge -- collapsible per-slot groups (mirrors Tower/Spellbook/Gems pattern)
+
   $('mat-strip-forge').innerHTML=matStripHTML();
   const groups=getForgeGroups();
   if(groups.length===0){
@@ -5931,10 +5946,10 @@ function renderGear(){
     for(const slot of GEAR_SLOTS){
       const list=bySlot[slot];
       if(!list||list.length===0)continue;
-      // Sort within a slot: tier desc, then rarity desc -- strongest dupes first
+
       list.sort((a,b)=>b.tier-a.tier||RARITY_ORDER.indexOf(b.rarity)-RARITY_ORDER.indexOf(a.rarity));
       const key='forge:'+slot;
-      const collapsed=G.uiCollapsed[key]!==false; // default collapsed
+      const collapsed=G.uiCollapsed[key]!==false;
       const totalDupes=list.reduce((s,g)=>s+g.items.length,0);
       fhtml+=`<div class="el-group">
         <div class="el-group-header" data-toggle-forge="${slot}">
@@ -5977,10 +5992,10 @@ function renderGear(){
     });
   }
 
-  // Gems -- collapsible per-type groups, mirrors Spellbook/Elements pattern.
-  // Iterate GEM_TYPES (not the inventory) so group order is stable across
-  // renders even as counts change. Onyx (power) has no element, so it uses
-  // arcane styling + an "All Elements" label.
+
+
+
+
   const gemEntries=Object.entries(G.gemInventory).filter(([,c])=>c>0);
   const totalGems=gemEntries.reduce((a,[,c])=>a+c,0);
   $('gem-summary').textContent=`${totalGems} gem${totalGems===1?'':'s'}`;
@@ -6002,7 +6017,7 @@ function renderGear(){
       const total=list.reduce((s,g)=>s+g.count,0);
       const highest=list.reduce((m,g)=>Math.max(m,g.lvl),0);
       const key='gems:'+tg.id;
-      const collapsed=G.uiCollapsed[key]!==false; // default collapsed
+      const collapsed=G.uiCollapsed[key]!==false;
       const elClass=tg.el||'arcane';
       const elGlyph=tg.el?EL_INFO[tg.el].glyph:'=';
       const elLabel=tg.el?EL_INFO[tg.el].name:'All Elements';
@@ -6039,7 +6054,7 @@ function renderGear(){
     });
   }
 
-  // Treasure maps
+
   let tm='';
   if(G.treasureMaps>0){
     tm=`<div class="row" style="margin-bottom:6px">
@@ -6052,7 +6067,7 @@ function renderGear(){
   $('treasure-maps-row').innerHTML=tm;
   if($('btn-use-map'))$('btn-use-map').onclick=()=>{useTreasureMap();renderGear();renderTop();renderMap();};
 
-  // Inventory groups are folded by slot; sorting stays within each group.
+
   $('inv-summary').textContent=`${G.gearInventory.length} / ${typeof GEAR_CAPACITY==='number'?GEAR_CAPACITY:5000} items`;
   const VALID_INV_SORTS=['rarity','strength','alpha'];
   const sortMode=VALID_INV_SORTS.includes(G.uiInvSort)?G.uiInvSort:'rarity';
@@ -6088,10 +6103,10 @@ function renderGear(){
       if(!list||list.length===0)continue;
       const sorted=sortGear(list,sortMode);
       const key='inv:'+slot;
-      const collapsed=G.uiCollapsed[key]!==false; // default collapsed
+      const collapsed=G.uiCollapsed[key]!==false;
       const eq=G.gear[slot];
       const eqLabel=eq?`equipped: ${gearLabel(eq)} (T${eq.tier} ${RARITIES[eq.rarity].label})`:'no item equipped';
-      // Highest rarity in the group as a quick at-a-glance signal in the header
+
       const topRarity=[...list].sort((a,b)=>RARITY_ORDER.indexOf(b.rarity)-RARITY_ORDER.indexOf(a.rarity))[0].rarity;
       const topR=RARITIES[topRarity];
       inv+=`<li class="el-group">
@@ -6116,7 +6131,7 @@ function renderGear(){
   $('inventory-list').querySelectorAll('button').forEach(b=>{
     if(b.dataset.bulkSlot)b.onclick=e=>{e.stopPropagation();$('sell-slot').value=b.dataset.bulkSlot;$('bulk-sale').open=true;cancelBulkSale();$('sell-rarity').focus();};
     if(b.dataset.equipId)b.onclick=()=>{equipFromInventory(b.dataset.equipId);renderGear();renderHero();renderTop();};
-    if(b.dataset.sellId)b.onclick=()=>{sellGear(b.dataset.sellId);renderGear();renderTop();};
+    if(b.dataset.sellId)b.onclick=()=>openGearSaleModal(b.dataset.sellId);
     if(b.dataset.salvId)b.onclick=()=>{salvageGear(b.dataset.salvId);renderGear();renderTop();};
     if(b.dataset.sockId)b.onclick=()=>{
       const item=G.gearInventory.find(i=>i.id===b.dataset.sockId);
@@ -6125,9 +6140,10 @@ function renderGear(){
     };
   });
   renderBulkSale();
+  renderAutoSellRules();renderGemDisposal();
 }
-// Manor categories -- grouping by purpose so the tab reads at a glance.
-// Building IDs are stable, so a static map is the simplest mapping.
+
+
 const MANOR_CATEGORIES=[
   {id:'combat',name:'Combat & Defense',ids:['spellfoci','astrolabe','sanctum']},
   {id:'mana',  name:'Mana',            ids:['garden','aetherwell']},
@@ -6170,7 +6186,7 @@ function renderManor(){
     const builds=cat.ids.map(id=>BUILDINGS.find(b=>b.id===id)).filter(Boolean);
     if(builds.length===0)continue;
     const key='manor:'+cat.id;
-    const collapsed=G.uiCollapsed[key]!==false; // default collapsed
+    const collapsed=G.uiCollapsed[key]!==false;
     const owned=builds.reduce((s,b)=>s+(G.buildings[b.id]||0),0);
     const cap=builds.reduce((s,b)=>s+b.max,0);
     html+=`<div class="el-group">
@@ -6210,7 +6226,7 @@ function renderTower(){
   let html=`<div class="sub" style="margin-bottom:8px">Crafts at <b style="color:var(--hi)">T${craftTier} ${tierName}</b> | your highest unlocked tier. Legendary forging lives in its own tab.</div>`;
   for(const slot of GEAR_SLOTS){
     const key='tower:'+slot;
-    const collapsed=G.uiCollapsed[key]!==false; // default collapsed
+    const collapsed=G.uiCollapsed[key]!==false;
     html+=`<div class="el-group">
       <div class="el-group-header" data-toggle-tower="${slot}">
         <span style="color:var(--hi);font-weight:700;text-transform:capitalize">${slot}</span>
@@ -6281,9 +6297,9 @@ function renderLegendary(){
   });
 }
 
-// ============================================================
-// REMAINING RENDERS
-// ============================================================
+
+
+
 function renderGolems(){
   if(!isGolemsUnlocked()){
     $('golems-lock').textContent=lockMsg(2);
@@ -6365,18 +6381,18 @@ function renderFamiliars(){
         <button class="act danger" data-fam="${idx}">Dismiss</button>
       </div>`;
     }
-    // Group by rarity, descending. Pair each familiar with its original index
-    // so the dismiss button keeps pointing at the correct G.familiars slot.
+
+
     const indexed=G.familiars.map((f,i)=>({f,i}));
     const byRar={};
     for(const e of indexed)(byRar[e.f.rarity]=byRar[e.f.rarity]||[]).push(e);
-    const rarOrder=[...RARITY_ORDER].reverse(); // legendary first
+    const rarOrder=[...RARITY_ORDER].reverse();
     let html='';
     for(const rar of rarOrder){
       const list=byRar[rar];
       if(!list||list.length===0)continue;
       const key='fam:'+rar;
-      const collapsed=G.uiCollapsed[key]!==false; // default collapsed
+      const collapsed=G.uiCollapsed[key]!==false;
       const rarLabel=FAMILIAR_RARITIES[rar].label;
       html+=`<div class="el-group">
         <div class="el-group-header" data-toggle-fam="${rar}">
@@ -6403,7 +6419,7 @@ function renderFamiliars(){
   }
 }
 
-// Research categories -- by stat family. Order = display order.
+
 const RESEARCH_CATEGORIES=[
   {id:'combat', name:'Combat',   ids:['r_atk1','r_atk2','r_atk3','r_dmg1','r_crit1','r_blood']},
   {id:'defense',name:'Defense',  ids:['r_def1']},
@@ -6454,7 +6470,7 @@ function renderResearch(){
     const doneCount=projs.filter(r=>G.researchCompleted[r.id]).length;
     const allDone=doneCount===projs.length;
     const key='research:'+cat.id;
-    const collapsed=G.uiCollapsed[key]!==false; // default collapsed
+    const collapsed=G.uiCollapsed[key]!==false;
     html+=`<div class="el-group ${allDone?'locked':''}">
       <div class="el-group-header" data-toggle-research="${cat.id}">
         <span style="color:var(--hi);font-weight:700">${cat.name}</span>
@@ -6494,14 +6510,14 @@ function renderTrial(){
   const scaledGold=Math.ceil(ref.gold*d.reward);
   const scaledXp=Math.ceil(ref.xp*d.reward);
   const stateLabel=G.trial.inTrial?'<b style="color:var(--gold)">CLIMBING</b>':'idle';
-  // Per-floor reward preview for the boss the player is about to fight.
+
   const u=G.trial.upgrades;
   const f=G.trial.floor;
   let baseEss=1+(f%5===0?1:0)+(f%10===0?2:0)+(u.tu_echo||0);
   baseEss=Math.ceil(baseEss*(1+0.05*(u.tu_essence||0)));
   const previewTier=trialGearTier(f);
   const previewBumps=2+(u.tu_forge||0);
-  // Next unclaimed milestone
+
   const nextMs=TRIAL_MILESTONES.find(m=>!G.trial.milestonesAwarded[m.floor]);
   let html=`<div class="crusade">
     <div class="nm">${stateLabel}</div>
@@ -6516,8 +6532,8 @@ function renderTrial(){
         : '<button class="act warn" id="btn-enter-trial">Enter Trials</button>'}
     </div>
   </div>`;
-  // Milestone roster -- collapsible mini panel showing every tier and its
-  // claimed/unclaimed state. Helps players see what they're climbing toward.
+
+
   const msKey='trialMilestones';
   const msCollapsed=G.uiCollapsed[msKey]!==false;
   let msHtml=`<div class="el-group" style="margin-top:6px">
@@ -6578,7 +6594,7 @@ function renderTrial(){
   });
 }
 
-// Alchemy categories used for cabinet/recipe grouping (collapsible).
+
 const ALCHEMY_CATEGORIES=[
   {id:'restorative', name:'Restorative'},
   {id:'buff',        name:'Combat Buffs'},
@@ -6600,7 +6616,7 @@ function renderAlchemy(){
   const a=G.alchemy;
   const slotCount=brewSlotCount();
   const used=a.brewSlots.length;
-  // Skill header -- alchemy lvl + xp bar (gold at cap)
+
   const atCap=a.lvl>=ALCHEMY_LVL_CAP;
   const next=xpForAlchemyLevel(a.lvl+1);
   const pct=atCap?100:Math.min(100,(a.xp/next)*100);
@@ -6611,7 +6627,7 @@ function renderAlchemy(){
     </div>
     <div class="bar xpbar${atCap?' maxed':''}"><span style="width:${pct}%"></span><div class="txt">${atCap?'MAX':`xp ${fmt(a.xp)}/${fmt(next)}`}</div></div>
   </div>`;
-  // Brewing status -- N parallel slots
+
   let bs='';
   for(let i=0;i<slotCount;i++){
     const slot=a.brewSlots[i];
@@ -6634,7 +6650,7 @@ function renderAlchemy(){
       </div>`;
     }
   }
-  // Auto-brew (Magus+)
+
   if(isAutoBrew()){
     const opts=POTION_RECIPES.filter(r=>!r.element||uiSchoolUnlocked(r.element)).map(r=>`<option value="${r.id}"${a.autoBrew===r.id?' selected':''}>${r.name}</option>`).join('');
     bs+=`<div class="row" style="margin-top:4px;align-items:center">
@@ -6649,7 +6665,7 @@ function renderAlchemy(){
   if($('auto-brew-select')){
     $('auto-brew-select').onchange=e=>{a.autoBrew=e.target.value||null;tryAutoBrew();renderAlchemy();};
   }
-  // Recipes -- collapsible per category
+
   let rh='';
   for(const cat of ALCHEMY_CATEGORIES){
     const list=POTION_RECIPES.filter(r=>r.category===cat.id&&(!r.element||uiSchoolUnlocked(r.element)));
@@ -6692,7 +6708,7 @@ function renderAlchemy(){
   $('alchemy-recipes').querySelectorAll('button[data-brew]').forEach(b=>{
     b.onclick=()=>{startBrew(b.dataset.brew);renderAlchemy();renderTop();renderHero();};
   });
-  // Potion Cabinet
+
   const ownedRecipes=Object.keys(a.potions).filter(id=>{
     const recipe=getRecipe(id);if(recipe?.element&&!uiSchoolUnlocked(recipe.element))return false;
     const buckets=a.potions[id];
@@ -6724,7 +6740,7 @@ function renderAlchemy(){
           const buckets=a.potions[r.id]||{};
           const keys=Object.keys(buckets).filter(k=>buckets[k]>0).sort((x,y)=>parseFloat(y)-parseFloat(x));
           const rTotal=keys.reduce((s,k)=>s+buckets[k],0);
-          // Auto-config UI varies by effect kind
+
           let autoCfg='';
           const ek=r.effect.kind;
           if(ek==='heal'||ek==='mana'){
@@ -6847,14 +6863,14 @@ function renderCrusade(){
   renderExpeditionAssignment();
 }
 
-// Awakening node categories -- split tier-0 nodes between Stat Upgrades and
-// Permanent Unlocks (the "keep on awaken" + start-level nodes), then bucket
-// the rest by their tier-req gate.
+
+
+
 function awakeningCategoryOf(n){
   if(n.tierReq>=7)return 'tier7';
   if(n.tierReq>=5)return 'tier5';
   if(n.tierReq>=3)return 'tier3';
-  // tier-0 nodes -- split by whether they're a one-time perma-unlock
+
   const permaKeys=['startLvl','keepSpells','keepFamiliars','keepResearch','keepGear'];
   if(Object.keys(n.bonus||{}).some(k=>permaKeys.includes(k)))return 'unlocks';
   return 'stats';
@@ -6903,8 +6919,8 @@ function renderAwaken(){
     const ownedCount=list.filter(n=>G.awakening[n.id]).length;
     const tierLocked=cat.tierReq>d.tier;
     const key='awaken:'+cat.id;
-    // Tier-locked categories default collapsed; available ones default open
-    // for the most common interaction (buy stat upgrades after each awaken).
+
+
     const defaultOpen=!tierLocked&&cat.id==='stats';
     const collapsed=defaultOpen?G.uiCollapsed[key]===true:G.uiCollapsed[key]!==false;
     html+=`<div class="el-group ${tierLocked?'locked':''}">
@@ -6931,13 +6947,13 @@ function renderAwaken(){
   });
 }
 
-// Active tab tracking -- only the active pane re-renders each tick. Massive perf
-// win: cuts tick render work from 17 panels -> 4-5 and prevents click-eating
-// from constant innerHTML replacement on hidden panes.
+
+
+
 let activeTab='world';
 function renderActivePane(){
   switch(activeTab){
-    case 'world': /* map+hero handled in hot */ break;
+    case 'world':   break;
     case 'spells': renderSpellbook(); break;
     case 'elements': renderElements(); break;
     case 'gear': renderGear(); break;
@@ -6964,13 +6980,14 @@ function enhanceDisclosures(){
   });
 }
 function renderHot(){
-  // Live state -- every tick. Bars, map, and the target intel panel all need
-  // 4Hz responsiveness since they reflect in-combat state.
+  if(!document.hidden&&!_pageHidden&&!_loopSuspended)flushAutoSellSummary();
+
+
   renderTop();renderLog();renderTargetIntel();renderSpellHotbar();
   if(activeTab==='world'){renderMap();renderHero();renderEncounterScene();}
 }
 function renderCold(){
-  // Keep form edits and keyboard focus stable while live panels update.
+
   const focused=document.activeElement;
   if(focused&&(focused.matches('input,textarea,select')||focused.isContentEditable))return;
   const focusId=focused?.id;
@@ -6984,9 +7001,9 @@ function renderCold(){
 }
 function renderAll(){renderHot();renderCold();}
 
-// ============================================================
-// MAIN GAME LOOP
-// ============================================================
+
+
+
 function simulationTick(){
   G.tick++;
   if(_pendingTrialTransition){
@@ -7002,19 +7019,19 @@ function simulationTick(){
   }
   tickMagic(TICK_S);
   for(const id in G.spellCd)G.spellCd[id]=Math.max(0,G.spellCd[id]-TICK_S);
-  // Dungeon timer
+
   if(G.inDungeon){
     G.dungeonTimeLeft-=TICK_S;
     if(G.dungeonTimeLeft<=0){exitDungeon('expired');}
   }
-  // Buff timers
+
   if(G.buffs.length){
     for(const b of G.buffs)b.dur-=TICK_S;
     const before=G.buffs.length;
     G.buffs=G.buffs.filter(b=>b.dur>0);
     if(G.buffs.length!==before)recomputeStats();
   }
-  // Hero
+
   if(!G.hero.alive){
     G.hero.respawnIn-=TICK_S;
     if(G.hero.respawnIn<=0)respawn();
@@ -7022,22 +7039,22 @@ function simulationTick(){
     G.hero.mana=Math.min(G.hero.maxMana,G.hero.mana+G.baseStats.manaRegen*TICK_S);
     if(G.baseStats.goldPerSec)earnGold(G.baseStats.goldPerSec*TICK_S);
   }
-  // Hero ailments tick BEFORE combat so DoT damage applies on the same tick
-  // and any ailment-induced death is registered immediately.
+
+
   if(G.hero.alive)tickAilments();
-  // Combat or movement
+
   if(G.hero.alive)tickEnemyEffects();
   if(G.enemy)combatTick();
   else if(G.hero.alive)stepHero();
-  // Loot/chest decay
+
   for(const l of G.loot)l.ttl-=TICK_S;
   G.loot=G.loot.filter(l=>l.ttl>0);
   for(const c of G.chests)if(c.openedTtl)c.openedTtl-=TICK_S;
   G.chests=G.chests.filter(c=>!c.opened||(c.openedTtl||0)>0);
-  // Passive systems
+
   tickGolems();tickResearch();tickRitual();tickBrew();tickAutoConsume();
   if(G.tick%4===0)tryAutoBrew();
-  // Roll the idle-rates window forward once per real-world second (TICK_S=0.25).
+
   if(Date.now()-G.rates._lastSnapT>=1000)recordRates();
 }
 let _lastTickAt=Date.now(),_tickAccumulator=0;
@@ -7047,7 +7064,7 @@ function resetGameClock(){_lastTickAt=Date.now();_tickAccumulator=0;_pendingTria
 function stopGameLoop(){
   if(_gameTimer!==null)clearInterval(_gameTimer);
   _gameTimer=null;
-  _timerGeneration++; // Invalidate callbacks already queued by an older interval.
+  _timerGeneration++;
 }
 function startGameLoop(){
   if(_gameTimer!==null||document.hidden||_pageHidden||_loopSuspended)return;
@@ -7057,7 +7074,7 @@ function startGameLoop(){
 function suspendGameLoop(){
   _loopSuspended=true;
   stopGameLoop();
-  // Preserve the last processed time, including any fractional/backlogged tick.
+
 }
 function resumeGameLoop(){
   if(document.hidden||_pageHidden)return;
@@ -7079,7 +7096,7 @@ function initGameLifecycle(){
   if(document.hidden)suspendGameLoop();else startGameLoop();
 }
 function gameTick(){
-  // Hidden tabs never simulate, render, create dialogs, or consume elapsed time.
+
   if(document.hidden||_pageHidden||_loopSuspended){suspendGameLoop();return;}
   const now=Date.now();
   const elapsed=Math.max(0,(now-_lastTickAt)/1000);
@@ -7087,8 +7104,8 @@ function gameTick(){
   _renderPause=Math.max(0,_renderPause-elapsed/TICK_S);
   let changed=false;
   if(elapsed>60){
-    // Claim this interval before doing work, so repeated resume events cannot
-    // apply it twice. The idle estimator caps rewards at twelve hours.
+
+
     const debt=_tickAccumulator;_tickAccumulator=0;
     if(G.inDungeon)exitDungeon('closed during your absence');
     if(G.trial.inTrial)exitTrial('paused during your absence');
@@ -7105,7 +7122,7 @@ function gameTick(){
     while(_tickAccumulator>=TICK_S&&steps<limit){
       simulationTick();_tickAccumulator-=TICK_S;steps++;
     }
-    // A short stall retains ordinary combat semantics without a 240-step burst.
+
     changed=steps>0;
   }
   if(_pendingTrialTransition&&_pendingTrialTransition.delay===undefined){
@@ -7120,23 +7137,23 @@ function gameTick(){
   renderOfflineGains();
 }
 
-// Pause cold renders during interaction so buttons stay stable. Live bars update.
+
 let _renderPause=0;
 function _markInteract(e){
   if(e.target.closest('button, input, select, summary, .tab-btn, .el-group-header, .gem-pill, .gem-choice')){
-    _renderPause=4; // 4 ticks ~ 1 second
+    _renderPause=4;
   }
 }
 
-// ============================================================
-// EVENTS / INIT
-// ============================================================
+
+
+
 function bindEvents(){
   document.addEventListener('mousedown',_markInteract,true);
   document.addEventListener('touchstart',_markInteract,true);
   document.addEventListener('keydown',_markInteract,true);
-  // Custom map tooltip -- instant (no 500ms native delay), follows cursor,
-  // not clipped by panel overflow:hidden since it's position:fixed on body.
+
+
   const tipEl=document.createElement('div');
   tipEl.className='map-tip';
   tipEl.style.display='none';
@@ -7159,10 +7176,10 @@ function bindEvents(){
     }
   });
   mapEl.addEventListener('mouseleave',()=>{tipEl.style.display='none';});
-  // Inventory hover tooltip -- same pattern as the map tooltip, but compares
-  // each unequipped item against whatever's currently in that slot. Bound
-  // once on #inventory-list (preserved across innerHTML rebuilds via event
-  // delegation through data-cmp-id).
+
+
+
+
   const gearTipEl=document.createElement('div');
   gearTipEl.className='gear-tip';
   gearTipEl.style.display='none';
@@ -7213,12 +7230,12 @@ function bindEvents(){
     if(!confirm('Are you absolutely sure?'))return;
     location.reload();
   };
-  // Appearance and reset controls fold away; saves stay in the masthead.
+
   $('btn-settings').onclick=()=>{
     const b=$('bottom');b.classList.toggle('collapsed');
     G.ui=G.ui||{};G.ui.settingsOpen=!b.classList.contains('collapsed');
   };
-  // Density toggle -- comfortable (default) <-> compact tightens padding everywhere
+
   $('btn-density-toggle').onclick=()=>{
     G.ui=G.ui||{};G.ui.density=(G.ui.density==='compact')?'comfortable':'compact';
     document.body.classList.toggle('compact',G.ui.density==='compact');
@@ -7232,6 +7249,7 @@ function bindEvents(){
   $('inv-sort').value=G.uiInvSort||'rarity';
   $('inv-sort').onchange=e=>{G.uiInvSort=e.target.value;renderGear();};
   bindBulkSale();
+  initInventoryTools();
   window.addEventListener('keydown',e=>{
     const tag=document.activeElement&&document.activeElement.tagName;
     if(tag==='TEXTAREA'||tag==='INPUT'||tag==='SELECT'||document.activeElement?.isContentEditable
@@ -7246,15 +7264,15 @@ function bindEvents(){
   });
 }
 
-// Sparse sigil field rendered once on boot and on resize. ~3% of cells get a
-// glyph; the rest stay whitespace so the pattern reads as airy starscape.
+
+
 const BG_SIGILS=['*','+','~','#','@','%','o','^',':','='];
 function renderBgArt(){
   if(document.hidden||_pageHidden||_loopSuspended){_bgArtNeedsRender=true;return;}
   _bgArtNeedsRender=false;
   const el=$('bg-art');if(!el)return;
-  // Tuned to the CSS font-size (22px) + letter-spacing (6px) -- overshoot both
-  // dimensions so the field fills wide ultrawides and tall portraits alike.
+
+
   const cols=Math.ceil(window.innerWidth/26)+4;
   const rows=Math.ceil(window.innerHeight/30)+4;
   let out='';
@@ -7272,9 +7290,9 @@ window.addEventListener('resize',()=>{
   if(document.hidden||_pageHidden||_loopSuspended){_bgArtNeedsRender=true;return;}
   _bgArtResizeT=setTimeout(renderBgArt,200);
 });
-// Inline this section in the single game document before init().
-// Call initInterfaceEnhancements() after bindEvents(), and updateInterfaceChrome()
-// after renderTop(). These controls never write browser storage or use a network.
+
+
+
 const GRIMOIRE_CHAPTERS={
   world:['adventure','01 / Adventure','The world awaits.','Follow the path, gather what glimmers, and challenge the dragon.'],
   trials:['adventure','01 / Adventure','Climb beyond your limits.','One boss per floor. Earn Essence for upgrades that survive Awakening.'],
@@ -7369,7 +7387,7 @@ function renderMobileNavigation(){
       button.textContent+=' | '+original.querySelector('.nav-lock').textContent;
       button.title=original.title;
     }
-    // Use the established handler so combat/render state always follows navigation.
+
     button.onclick=()=>original.click();
     if(original.dataset.tab===activeTab)button.setAttribute('aria-current','page');
     list.appendChild(button);
@@ -7428,6 +7446,7 @@ function initInterfaceEnhancements(){
 }
 
 function openSaveDialog(mode){
+  clearGearSaleDialog(false,false);
   if(_saveDialogClose)_saveDialogClose();
   const exporting=mode==='export';
   const previouslyFocused=document.activeElement;
@@ -7441,7 +7460,7 @@ function openSaveDialog(mode){
   dialog.setAttribute('aria-modal','true');
   dialog.setAttribute('aria-labelledby','wizard-save-title');
   dialog.setAttribute('aria-describedby','wizard-save-description');
-  // Only static, authored markup belongs here; save data is assigned through value.
+
   dialog.innerHTML='<div class="save-dialog-head"><h3 id="wizard-save-title"></h3><button type="button" class="save-close" aria-label="Close save dialog">x</button></div>'+
     '<p id="wizard-save-description"></p><label class="save-code-label" for="wizard-save-code">Your save code</label>'+
     '<textarea class="save-code" id="wizard-save-code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="wizard-save-description"></textarea>'+
@@ -7468,7 +7487,7 @@ function openSaveDialog(mode){
   _saveDialogClose=close;
   dialog.querySelector('.save-close').onclick=close;
   overlay.addEventListener('click',event=>{if(event.target===overlay)close();});
-  // Contain keyboard controls so moving through a dialog never moves the wizard.
+
   overlay.addEventListener('keydown',event=>{
     event.stopPropagation();
     if(event.key==='Escape'){event.preventDefault();close();return;}
@@ -7495,7 +7514,7 @@ function openSaveDialog(mode){
       let copied=false;
       try{
         if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(code.value);copied=true;}
-      }catch(_){/* File URLs and restricted clipboard contexts use selection below. */}
+      }catch(_){ }
       if(!copied){
         code.focus();code.select();
         try{copied=document.execCommand('copy');}catch(_){copied=false;}
@@ -7555,8 +7574,8 @@ function init(){
   applyTheme(G.theme||'dark');
   recomputeStats();
   G.hero.hp=G.hero.maxHp;G.hero.mana=G.hero.maxMana;
-  // Seed the rates window so the first second of play doesn't read +Ngold/s
-  // worth of starting cash, and apply any saved density preference.
+
+
   G.rates._lastSnapGold=G.gold;
   G.rates._lastSnapXp=totalLifetimeXp();
   G.rates._lastSnapT=G.rates._windowStart=Date.now();
@@ -7576,7 +7595,8 @@ function inventoryRoom(){
   if(G.gearInventory.length<GEAR_CAPACITY)return true;
   logLine('Inventory full (5000). Salvage or combine items to make room.','sys');return false;
 }
-function storeGear(item){
+function storeGear(item,allowAutoSell=false){
+  if(allowAutoSell===true&&autoSellLoot(item))return false;
   if(G.gearInventory.length<GEAR_CAPACITY){G.gearInventory.push(item);return true;}
   if(item.legendary)return false;
   const dust=10*(item.tier+1)*(RARITY_ORDER.indexOf(item.rarity)+1);
@@ -8749,6 +8769,174 @@ function initExpansionInterface(){
   $('btn-map').onclick=()=>{G.ui=G.ui||{};G.ui.worldView='map';renderEncounterScene();};
 }
 // END EMBEDDED expansion-ui
+// BEGIN EMBEDDED auto-sell
+// Optional loot rules. Selection is an exact tier AND rarity intersection.
+function normalizeAutoSell(raw){
+  const valid=!!raw&&typeof raw==='object'&&!Array.isArray(raw);
+  return {enabled:valid&&raw.enabled===true,
+    tiers:valid&&Array.isArray(raw.tiers)?[...new Set(raw.tiers.filter(t=>Number.isInteger(t)&&t>=0&&t<=5))]:[],
+    rarities:valid&&Array.isArray(raw.rarities)?[...new Set(raw.rarities.filter(r=>RARITY_ORDER.includes(r)))]:[]};
+}
+function autoSellEligible(item,state=G){
+  const rule=state.autoSell;
+  if(!item||item.legendary||rule?.enabled!==true||!Array.isArray(rule.tiers)||!Array.isArray(rule.rarities)
+    ||!Number.isInteger(item.tier)||item.tier<0||item.tier>5||!RARITY_ORDER.includes(item.rarity)
+    ||!rule.tiers.includes(item.tier)||!rule.rarities.includes(item.rarity))return false;
+  return !Object.values(state.gear||{}).some(g=>g&&(g===item||item.id!=null&&g.id===item.id));
+}
+let _autoSellPending={count:0,gold:0,gems:0},_autoSellState=null;
+function resetAutoSellSummary(){_autoSellPending={count:0,gold:0,gems:0};_autoSellState=G;}
+function autoSellLoot(item){
+  if(!autoSellEligible(item))return false;
+  if(_autoSellState!==G)resetAutoSellSummary();
+  const gold=gearSellPrice(item),gems=refundGearGems(item);
+  earnGold(gold);_autoSellPending.count++;_autoSellPending.gold+=gold;_autoSellPending.gems+=gems;
+  return true;
+}
+function flushAutoSellSummary(){
+  if(_autoSellState!==G)resetAutoSellSummary();
+  const result=_autoSellPending;resetAutoSellSummary();
+  if(result.count)logLine(`Auto-sold ${result.count} gear for ${fmtG(result.gold)} | ${result.gems} socketed gems returned.`,'sys');
+  return result;
+}
+// END EMBEDDED auto-sell
+// BEGIN EMBEDDED gem-tools
+// Spare gems: reserves apply to each loose type + level stack; sockets are untouched.
+function gemDisposalTotals(entries,mode){
+  const result={entries,count:0,gold:0,dust:0,crystal:0};
+  for(const e of entries){
+    const level=Number(e.id.slice(-1)),scale=2**(level-1);
+    result.count+=e.count;
+    if(mode==='sell')result.gold+=e.count*25*scale;
+    else{result.dust+=e.count*2*scale;if(level>=3)result.crystal+=e.count*2**(level-3);}
+  }
+  return result;
+}
+function gemDisposalPreview(f,mode){
+  if(!f||!(f.type==='all'||GEM_TYPES.some(t=>t.id===f.type))
+    ||!(f.level==='all'||Number.isInteger(f.level)&&f.level>=1&&f.level<=5)
+    ||!Number.isInteger(f.keep)||f.keep<0||f.keep>999999||!['sell','salvage'].includes(mode))
+    return {entries:[],count:0,gold:0,dust:0,crystal:0};
+  const entries=[];
+  for(const t of GEM_TYPES)if(f.type==='all'||f.type===t.id)for(let level=1;level<=5;level++)if(f.level==='all'||f.level===level){
+    const id=gemId(t.id,level),count=G.gemInventory[id];
+    if(Number.isSafeInteger(count)&&count>f.keep)entries.push({id,count:count-f.keep});
+  }
+  return gemDisposalTotals(entries,mode);
+}
+function disposeGems(f,mode,reviewedEntries=null){
+  let entries=gemDisposalPreview(f,mode).entries;
+  if(reviewedEntries!==null){
+    const reviewed=new Map();
+    if(Array.isArray(reviewedEntries))for(const e of reviewedEntries)
+      if(e&&typeof e.id==='string'&&Number.isSafeInteger(e.count)&&e.count>0)
+        reviewed.set(e.id,Math.max(reviewed.get(e.id)||0,e.count));
+    entries=entries.map(e=>({id:e.id,count:Math.min(e.count,reviewed.get(e.id)||0)})).filter(e=>e.count>0);
+  }
+  const {count,gold,dust,crystal}=gemDisposalTotals(entries,mode),result={count,gold,dust,crystal};
+  if(!count)return result;
+  for(const e of entries){G.gemInventory[e.id]-=e.count;if(!G.gemInventory[e.id])delete G.gemInventory[e.id];}
+  if(gold)earnGold(gold);
+  G.materials.dust+=dust;G.materials.crystal+=crystal;
+  logLine(mode==='sell'?`Sold ${count} loose gems for ${fmtG(gold)}.`:`Salvaged ${count} loose gems: +${fmt(dust)} dust, +${fmt(crystal)} crystal.`,'sys');
+  return result;
+}
+// END EMBEDDED gem-tools
+// BEGIN EMBEDDED inventory-ui
+// Inventory controls remain in the single-file release; no browser persistence.
+let _gearSaleDialog=null,_gemDisposalReview=null;
+function clearGearSaleDialog(restoreFocus=true,resume=true){
+  const sale=_gearSaleDialog;if(!sale)return;
+  _gearSaleDialog=null;sale.wrap.remove();
+  if(restoreFocus){const target=sale.focusedBefore?.isConnected?sale.focusedBefore:$('btn-bulk-sell');target?.focus({preventScroll:true});}
+  if(resume)renderOfflineGains();
+}
+function openGearSaleModal(itemId){
+  clearGearSaleDialog(false,false);
+  const item=G.gearInventory.find(i=>i.id===itemId);
+  if(!item||Object.values(G.gear).some(i=>i?.id===itemId))return;
+  const gems=item.sockets.filter(Boolean).length;
+  if(!gems){sellGear(itemId);renderGear();renderTop();return;}
+  const wrap=document.createElement('div');wrap.className='modal-bg';
+  const card=document.createElement('section');card.className='modal';
+  card.setAttribute('role','dialog');card.setAttribute('aria-modal','true');card.setAttribute('aria-label','Sell socketed gear');
+  const heading=document.createElement('h3');heading.textContent='Sell socketed gear';
+  const content=document.createElement('p');content.className='sub';
+  content.textContent=`${asciiText(gearLabel(item))} | ${fmtG(gearSellPrice(item))} | ${gems} socketed gem${gems===1?'':'s'}. Sell with gems permanently discards those gems for the gear price shown. Retrieve gems and sell returns them to your collection.`;
+  const actions=document.createElement('div');actions.className='save-dialog-actions';
+  const sale={wrap,focusedBefore:document.activeElement},buttons=[];
+  for(const [label,refund] of [['Sell with gems',false],['Retrieve gems and sell',true],['Cancel',null]]){
+    const button=document.createElement('button');button.type='button';button.className=refund===false?'act danger':'act';button.textContent=label;
+    button.onclick=()=>{
+      if(_gearSaleDialog!==sale)return;
+      const current=G.gearInventory.find(i=>i.id===itemId);
+      if(refund!==null&&current===item&&!Object.values(G.gear).some(i=>i?.id===itemId)){
+        sellGear(itemId,refund);renderGear();renderTop();
+      }
+      clearGearSaleDialog();
+    };
+    buttons.push(button);actions.appendChild(button);
+  }
+  wrap.onclick=e=>{if(e.target===wrap)clearGearSaleDialog();};
+  wrap.addEventListener('keydown',e=>{
+    e.stopPropagation();
+    if(e.key==='Escape'){e.preventDefault();clearGearSaleDialog();}
+    if(e.key==='Tab'){e.preventDefault();const i=buttons.indexOf(document.activeElement);buttons[(i+(e.shiftKey?-1:1)+buttons.length)%buttons.length].focus();}
+  });
+  card.appendChild(heading);card.appendChild(content);card.appendChild(actions);wrap.appendChild(card);
+  _gearSaleDialog=sale;document.body.appendChild(wrap);buttons[1].focus();
+}
+function renderAutoSellRules(){
+  const r=normalizeAutoSell(G.autoSell),ready=r.tiers.length&&r.rarities.length,id=document.activeElement?.id;
+  $('auto-sell-status').textContent=r.enabled&&ready?'On':'Off';
+  let html='<p class="casting-note">New loot matching a selected tier AND rarity is sold automatically. Equipped gear and crafted uniques are kept; socketed gems return to your collection. Export to keep your rules.</p>';
+  for(const [key,values] of [['tiers',[0,1,2,3,4,5]],['rarities',RARITY_ORDER]]){
+    html+=`<div class="row"><b class="sub">${key==='tiers'?'Tiers':'Rarities'}</b>`+values.map(v=>`<label class="sub"><input type="checkbox" id="auto-${key}-${v}" data-auto-key="${key}" data-auto-value="${v}" ${r[key].includes(v)?'checked':''}> ${key==='tiers'?'T'+v:RARITIES[v].label}</label>`).join('')+`<button class="act" id="auto-all-${key}" data-auto-all="${key}">${values.every(v=>r[key].includes(v))?'Clear':'All'} ${key}</button></div>`;
+  }
+  html+=`<label class="sub"><input type="checkbox" id="auto-sell-enabled" ${r.enabled&&ready?'checked':''} ${ready?'':'disabled'}> Enable auto-sell${ready?'':' (choose tiers and rarities first)'}</label>`;
+  $('auto-sell-controls').innerHTML=html;
+  $('auto-sell-controls').querySelectorAll('[data-auto-key]').forEach(input=>input.onchange=()=>{
+    const key=input.dataset.autoKey,v=key==='tiers'?Number(input.dataset.autoValue):input.dataset.autoValue;
+    r[key]=input.checked?[...r[key],v]:r[key].filter(x=>x!==v);G.autoSell=normalizeAutoSell(r);
+    if(!G.autoSell.tiers.length||!G.autoSell.rarities.length)G.autoSell.enabled=false;
+    renderAutoSellRules();
+  });
+  $('auto-sell-controls').querySelectorAll('[data-auto-all]').forEach(button=>button.onclick=()=>{
+    const key=button.dataset.autoAll,values=key==='tiers'?[0,1,2,3,4,5]:RARITY_ORDER;
+    r[key]=values.every(v=>r[key].includes(v))?[]:[...values];G.autoSell=normalizeAutoSell(r);
+    if(!G.autoSell.tiers.length||!G.autoSell.rarities.length)G.autoSell.enabled=false;
+    renderAutoSellRules();
+  });
+  $('auto-sell-enabled').onchange=e=>{G.autoSell={...r,enabled:e.target.checked&&!!ready};renderAutoSellRules();};
+  if(id?.startsWith('auto-'))$(id)?.focus({preventScroll:true});
+}
+function gemDisposalFilter(){
+  const level=$('gem-clean-level').value,keep=$('gem-clean-keep').value;
+  return {type:$('gem-clean-type').value,level:level==='all'?'all':Number(level),keep:keep===''?NaN:Number(keep)};
+}
+function cancelGemDisposal(){_gemDisposalReview=null;renderGemDisposal();}
+function renderGemDisposal(){
+  const filter=gemDisposalFilter(),mode=$('gem-clean-mode').value,p=_gemDisposalReview||gemDisposalPreview(filter,mode);
+  const reward=(_gemDisposalReview?.mode||mode)==='sell'?fmtG(p.gold):`${fmt(p.dust)} dust | ${fmt(p.crystal)} crystal`;
+  $('gem-clean-preview').textContent=`${p.count} spare gems | ${reward}`+(_gemDisposalReview?` | ${p.scope}. Confirm to ${p.mode} permanently.`:'');
+  $('gem-clean-confirm').textContent=_gemDisposalReview?(_gemDisposalReview.mode==='sell'?'Confirm sale':'Confirm salvage'):'Review gems';
+  $('gem-clean-confirm').disabled=!p.count;$('gem-clean-cancel').hidden=!_gemDisposalReview;
+  if(!Number.isInteger(filter.keep)||filter.keep<0||filter.keep>999999)$('gem-clean-preview').textContent='Keep must be a whole number from 0 to 999999.';
+}
+function initInventoryTools(){
+  $('gem-clean-type').innerHTML='<option value="all">All types</option>'+GEM_TYPES.map(t=>`<option value="${t.id}">${asciiHTML(t.name)}</option>`).join('');
+  $('gem-clean-level').innerHTML='<option value="all">All levels</option>'+[1,2,3,4,5].map(n=>`<option value="${n}">L${n}</option>`).join('');
+  for(const id of ['type','level','keep','mode'])$('gem-clean-'+id).onchange=cancelGemDisposal;
+  $('gem-clean-keep').oninput=cancelGemDisposal;$('gem-clean-cancel').onclick=cancelGemDisposal;
+  $('gem-clean-confirm').onclick=()=>{
+    if(_gemDisposalReview){const p=_gemDisposalReview;_gemDisposalReview=null;disposeGems(p.filter,p.mode,p.entries);renderGear();renderTop();return;}
+    const filter=gemDisposalFilter(),mode=$('gem-clean-mode').value,p=gemDisposalPreview(filter,mode);if(!p.count)return;
+    const scope=['type','level'].map(id=>$('gem-clean-'+id).selectedOptions[0].textContent).join(' / ')+` / Keep ${filter.keep} per type and level`;
+    _gemDisposalReview={...p,filter,mode,scope};renderGemDisposal();
+  };
+  renderAutoSellRules();renderGemDisposal();
+}
+// END EMBEDDED inventory-ui
 init();
 </script>
 </html>

@@ -867,14 +867,14 @@ body[data-theme^="light"]{--el-nature:#28713c;--el-resonance:#795818;--el-chaos:
 [hidden]{display:none!important}
 .encounter-stage{padding:20px 24px 18px;background:var(--bg);text-align:center;border-bottom:1px solid var(--border);min-height:335px}
 .scene-title{font-size:12px;color:var(--fg);letter-spacing:.04em;margin-bottom:8px}
-.ascii-portrait{font:clamp(12px,1.45vw,20px)/1.08 var(--mono);font-variant-ligatures:none;letter-spacing:0;white-space:pre;margin:22px auto;overflow:hidden;color:var(--hi);min-height:160px;text-align:center}
+.ascii-portrait{font:clamp(12px,1.45vw,20px)/1.08 var(--mono);font-variant-ligatures:none;letter-spacing:0;white-space:pre;width:max-content;max-width:100%;margin:22px auto;overflow:hidden;color:var(--hi);min-height:160px;text-align:left}
 .scene-caption{font-size:10px;color:var(--dim);margin:6px 0 14px;min-height:14px}.scene-enemy-bar>span{background:var(--mob)}
 .map-toolbar .row{flex-wrap:wrap}.act,.tab-btn,.mobile-tab-btn,.mobile-groups button,body.compact .tab-btn{min-height:44px}
 button,select,summary,.el-group-header,.auto-cfg{min-height:44px!important}button{min-width:44px!important}
 .expedition-card{padding:15px 0;border-top:1px solid var(--row-divider)}.expedition-card:first-child{border-top:0}.expedition-card h3{margin:0 0 5px;font-size:13px;color:var(--hi);font-weight:600}.expedition-card p{margin:5px 0;font-size:11px;color:var(--dim);line-height:1.5}
 .assignment-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}.assignment-title{font-size:15px;color:var(--hi)}.assignment-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.assignment-controls label,.spell-filter label{font-size:11px;color:var(--dim)}
 .assignment-controls select,.spell-filter select,.casting-rule select,.casting-rule input{min-height:44px;border:1px solid var(--border);background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:12px;padding:7px 9px;max-width:100%}.assignment-controls input[type="checkbox"]{width:18px;height:18px}.repeat-label{min-height:44px;display:flex;gap:8px;align-items:center}
-.expedition-art{font-size:clamp(11px,1.5vw,18px);line-height:1.1;margin:24px 0;color:var(--hi);text-align:center;overflow:hidden}.expedition-progress{padding:12px;border:1px solid var(--border);background:var(--bg)}.expedition-progress .sub{display:block;margin-top:5px}.expedition-note{font-size:11px;line-height:1.55;color:var(--dim);margin:12px 0}
+.expedition-art{font-size:clamp(11px,1.5vw,18px);font-variant-ligatures:none;letter-spacing:0;line-height:1.1;width:max-content;max-width:100%;margin:24px auto;color:var(--hi);text-align:left;overflow:hidden}.expedition-progress{padding:12px;border:1px solid var(--border);background:var(--bg)}.expedition-progress .sub{display:block;margin-top:5px}.expedition-note{font-size:11px;line-height:1.55;color:var(--dim);margin:12px 0}
 .journal-entry{padding:13px 0;border-bottom:1px solid var(--row-divider)}.journal-entry:last-child{border-bottom:0}.journal-entry h3{font-size:12px;color:var(--hi);margin:0 0 6px}.journal-entry p{font-size:11px;color:var(--dim);line-height:1.55;margin:0}.event-choices{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.event-choices button{flex:1 1 140px;text-align:left;white-space:normal}.event-choices small{display:block;font-size:10px;color:var(--dim);font-weight:400;line-height:1.4;margin-top:4px}.journal-highlights{font-size:11px;color:var(--dim);line-height:1.6;padding-left:20px}
 .spell-filter{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px}.casting-rule{display:flex;align-items:center;flex-wrap:wrap;gap:7px;font-size:10px;color:var(--dim);margin-top:9px}.casting-rule input{width:66px}.slot .spell-slot-copy{min-width:0;flex:1}.slot .slot-actions{flex-shrink:0}.cast-wait{font-size:10px;color:var(--dim);display:block;margin-top:4px}
 .preset-box{padding-top:12px;margin-top:12px;border-top:1px solid var(--border)}.preset-box>p{margin:0 0 8px;font-size:11px;color:var(--dim)}.preset-rows{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.preset-row{padding:8px;border:1px solid var(--border);background:var(--bg)}.preset-row>strong{display:block;font-size:11px;margin-bottom:6px}.preset-row .row{gap:5px;flex-wrap:wrap}.preset-row button{font-size:10px;flex:1}.preset-row small{display:block;font-size:9px;color:var(--dim);margin-top:5px}
@@ -888,8 +888,9 @@ button,select,summary,.el-group-header,.auto-cfg{min-height:44px!important}butto
     <pre class="brand-art" aria-hidden="true">    /\
    /.*\
   /_.._\
-    ||
-  __||__</pre>
+   (oo) *
+   /||\/
+  /_||_\</pre>
     <div class="brand-copy">
       <span class="eyebrow">A pocket-sized world of magic</span>
       <h1>ASCII IDLE WIZARD</h1>
@@ -8100,27 +8101,27 @@ const EXPEDITION_REGIONS=[
  {id:'orchard',name:'Ash Orchard',gateBoss:'ember',awakening:0,level:9,zone:2,policies:['balanced','restore','burn'],policyLabels:{balanced:'Balanced',restore:'Restore',burn:'Burn'},
   desc:'Restore the irrigation or burn a path through the roots. Nature waits beyond the first circuit.',
   encounters:[{name:'Cinder Finch Roost',desc:'A flock scatters burning feathers.'},{name:"Kilnkeeper's Channel",desc:'An armored keeper guards the irrigation.'},{name:'Windfall Court',desc:'Fallen branches shelter restless roots.'}],boss:{name:'The Last Orchardkeeper',desc:'Restored roots protect its bark; burned paths increase its heat.'},
-  portrait:'       .-^^-.\n    __/ (oo) \\__\n   /  \\ /\\/  /  \\\n  /_T__\\____/__T_\\\n     / /  \\ \\\n    /_/    \\_\\',inscription:{id:'ashglass',name:'Ashglass',desc:"Spark lands its burn immediately, losing fuel for Wildfire and harvesting."}},
+  portrait:"       \\|/   \\|/\n   __.-/|\\---/|\\-.__\n  /  /  _   _  \\  \\\n /__/  (o) (o)  \\__\\\n    |     ^     |\n _T_|   /===\\   |_T_\n/___|__/|| ||\\__|___\\\n    /  /|| ||\\  \\\n __/__/ || || \\__\\__\n|~ ~ \\__/\\_/\\__/ ~ ~|\n|_____.==| |==._____|\n  ~~~ /_/|_|\\_\\ ~~~\n     /__/   \\__\\",inscription:{id:'ashglass',name:'Ashglass',desc:"Spark lands its burn immediately, losing fuel for Wildfire and harvesting."}},
  {id:'observatory',name:'Drowned Observatory',gateBoss:'tide',awakening:0,level:16,zone:3,policies:['balanced','drain','flood'],policyLabels:{balanced:'Balanced',drain:'Drain',flood:'Flood'},
   desc:'Broken lenses look into the flooded sky. The water obeys an ancient signal.',
   encounters:[{name:'Bellwell Steps',desc:'Echoing bells call drowned sentries.'},{name:'Inverted Telescope',desc:'An armored lens reflects your attacks.'},{name:'Pressure Vault',desc:'Water pressure hastens its custodians.'}],boss:{name:'The Blind Astronomer',desc:'Protected lenses give way to exposed machinery.'},
-  portrait:'       __()__\n     /  .*.  \\\n    |  (o o)  |\n     \\__/|\\__/\n       / | \\\n   ~~~/__|__\\~~~',inscription:{id:'brine',name:'Brine Shard',desc:'Ice Shard Soaks instead of Chilling: gain Conduct setups, lose its slowing and Shatter.'}},
+  portrait:"          .   *   .\n       .-'___'-.\n      /.-'   '-.\\\n     /_|  .*.  |_\\\n    |  | (o o) |  |\n    |__|__/|\\__|__|\n      /  /| \\  \\\n   __/__/ |  \\__\\__\n  /______/|________\\\n /~ ~\\  [===]  /~ ~\\\n|~ ~ ~\\___|___/~ ~ ~|\n| .--[===>|   |  ~  |\n'~'~~~~~~/ \\~~~~~~~'~'",inscription:{id:'brine',name:'Brine Shard',desc:'Ice Shard Soaks instead of Chilling: gain Conduct setups, lose its slowing and Shatter.'}},
  {id:'atlas',name:'Unfinished Atlas',gateBoss:'hollow',awakening:1,level:36,zone:5,policies:['balanced','survey','improvise'],policyLabels:{balanced:'Balanced',survey:'Survey',improvise:'Improvise'},
   desc:'Finish roads that end in questions. Annotations remain even after retreat.',
   encounters:[{name:'Wandering Compass',desc:'Its needle protects the road it points toward.'},{name:'Unwritten Bridge',desc:'Uncertain crossings hide armored constructs.'},{name:'Eraser Pack',desc:'Quick erasers remove the paths behind you.'}],boss:{name:'The Cartographer Without a Name',desc:'Your annotations shape its defenses.'},
-  portrait:'     .--?--.\n    /  . .  \\\n   |   [ ]   |\n    \\  ...  /\n     ?--+--?\n        |\n      ..?..',inscription:{id:'alphabet',name:'Borrowed Alphabet',desc:'Mana Bolt borrows the previous eligible school interaction, trading some neutral power.'}},
+  portrait:"        N\n    .---+---.\n   / \\  |  / \\\n  | W--(?)--E |    ?\n   \\ /  |  \\ /   .-+.\n    '---+---'   / . \\\n        S      |[?]|\n   _____|______ \\_/\n  / .--. .--. / /|\n / /  / /  / /_/ |\n/_/_ /_/ _/ /... ?\n  / / / / /   .-'\n /_/ /_/ /...?'",inscription:{id:'alphabet',name:'Borrowed Alphabet',desc:'Mana Bolt borrows the previous eligible school interaction, trading some neutral power.'}},
  {id:'leviathan',name:'The Ink Leviathan',gateBoss:null,awakening:4,level:70,zone:7,policies:['balanced','recover','purge'],policyLabels:{balanced:'Balanced',recover:'Recover',purge:'Purge'},
   desc:'The living library swallows chapters. Its sighting never expires.',
   encounters:[{name:'Margin Gullet',desc:'Ink parasites hide between swallowed pages.'},{name:'Bone Library',desc:'Rib shelves defend intact books.'},{name:'Black Tide Chamber',desc:'A rising tide of ink feeds its sentries.'}],boss:{name:"The Leviathan's Redactor",desc:'Briefly seals one spell category; diversified builds resist the seal.'},
-  portrait:'    ___=====___\n  _/  ||| |||  \\_\n /   <  (o)  >   \\\n \\___|||_|||____/\n      ~~~~~\n     /  |  \\',inscription:{id:'redaction',name:'Redaction',desc:'Soul Drain harvests more remaining damage, but supplies no healing.'}},
+  portrait:"      ___====___\n  ___/ |||||||| \\___\n / _  _  (O)  _  _  \\\n| / \\/ \\ / \\ / \\/ \\ |\n| |[]|[]| V |[]|[]| |\n \\|__|__|___|__|__|/\n  \\  /|| || ||\\  /\n   \\/ || || || \\/\n   /\\/||_||_||\\/\\\n  /  \\________/  \\\n |~ ~ / /  \\ \\ ~ ~|\n  \\__/ /____\\ \\__/\n ~~~/_/~~~~~~\\_\\~~~",inscription:{id:'redaction',name:'Redaction',desc:'Soul Drain harvests more remaining damage, but supplies no healing.'}},
  {id:'foundry',name:'Paradox Foundry',gateBoss:'aether',awakening:3,level:50,zone:6,policies:['balanced','temper','overload'],policyLabels:{balanced:'Balanced',temper:'Temper',overload:'Overload'},
   desc:'The next mutation is saved and visible. Import never rerolls its machinery.',
   encounters:[{name:'Splinter Golems',desc:'Rebuilt golems inherit the next machine trait.'},{name:'Unmade Apprentices',desc:'Broken apprentices reverse their construction.'},{name:'Contradiction Engine',desc:'Its contradictory plates alter the final smith.'}],boss:{name:'The Smith of Almost',desc:'Assembles its defenses from this circuit\'s machinery.'},
-  portrait:'       [?!]\n    ___|[]|___\n   / [ ] [ ] \\\n  |==[  @  ]==|\n     /[] []\\\n    [_]   [_]',inscription:{id:'weighted',name:'Weighted Die',desc:'Chaos uses steadier outcomes with a lower peak.'}},
+  portrait:"     |  .--.  |\n   __|__|?!|__|__\n  /  |  '--'  |  \\\n | [=]  /##\\  [=] |\n |  \\\\_/ <> \\_//  |\n |===| [@@] |===|\n  \\__|_/||\\_|__/\n   / /  ||  \\ \\\n _/_/___||___\\_\\_\n| _ _  /^^\\  _ _ |\n||_|_|(####)|_|_||\n|_____|_/\\_|_____|\n   <==/____\\==>",inscription:{id:'weighted',name:'Weighted Die',desc:'Chaos uses steadier outcomes with a lower peak.'}},
  {id:'orrery',name:'Orrery Beyond Midnight',gateBoss:'stellar',awakening:5,level:95,zone:8,policies:['balanced','anchor','align'],policyLabels:{balanced:'Balanced',anchor:'Anchor',align:'Align'},
   desc:'Conjunctions follow the journey, never the wall clock. The central star is missing.',
   encounters:[{name:'Orbit Wardens',desc:'Wardens defend the current orbital phase.'},{name:'Moonless Pilgrims',desc:'Their shields grow beneath an empty sky.'},{name:'Broken Satellites',desc:'Falling satellites open brief attack windows.'}],boss:{name:'The Empty Sun',desc:'A concealed core opens after a predictable conjunction.'},
-  portrait:'       * . *\n    .--(   )--.\n   (  .-- --.  )\n  *| (       ) |*\n   (  \'-- --\'  )\n    \'--(   )--\'\n       * . *',inscription:{id:'orbital',name:'Orbital Veil',desc:'Stardust Veil trades its offensive burst for sustained protection.'}}
+  portrait:"      .     *     .\n    .---.       .---.\n   /  o  '-._.-'  o  \\\n  |  .---.   .---.  |\n  | /  .  \\ /  .  \\ |\n *| |  .-- ? --.  | |*\n  | | (         ) | |\n  | \\  '-- ? --'  / |\n   \\ '--.  |  .--' /\n    '----\\-|-/----'\n       __\\ | /__\n      /___\\|/___\\\n       .  [_]  .",inscription:{id:'orbital',name:'Orbital Veil',desc:'Stardust Veil trades its offensive burst for sustained protection.'}}
 ];
 const EXPEDITION_BOSSES=['wisp','shade','ember','tide','storm','hollow','aether','chrono','stellar','elder'];
 for(const r of EXPEDITION_REGIONS)r.gateLabel=r.gateBoss?'Defeat '+['Wisp Drake','Shade Drake','Ember Drake','Tide Drake','Storm Drake','Hollow Wyrm','Aether Drake','Chrono Wyrm','Stellar Behemoth','The Slumbering Elder'][EXPEDITION_BOSSES.indexOf(r.gateBoss)]+(r.awakening?' / Awakening '+r.awakening:''):'Awakening 4 / discover Observatory and Atlas';
@@ -8402,16 +8403,183 @@ function renderMagicState(){
     const select=root.querySelector('select');if(select)select.onchange=()=>{setChaosPreference(select.value);renderMagicState();};
   }
 }
-const ENCOUNTER_PORTRAITS={
-  wizard:['          /\\','         /  \\','        / .  \\','       /__*___\\','         (o_o)       *','        /| = |\\     /','       / |   | \\___/','      /__|___|__\\','         /   \\','        /_____\\','     . . . @ . . .'],
-  drake:['       /\\          /\\','      /  \\________/  \\','     / /\\   __   /\\ \\','    / /  \\(oo)/  \\ \\','   /_/    / __ \\    \\_\\','         / /  \\ \\','    ____/ / /\\ \\ \\____','   /_____/ /  \\ \\_____\\','       _/ /    \\ \\_','      /__/      \\__\\'],
-  wisp:['          .   *','      *       .','        .-~~~-.','      .~  o o  ~.','      ~    ^    ~','       ~._____ .~','        / /|\\ \\','       ~ / | \\ ~','        .  |  .','      *    .    *'],
-  slime:['             .','         .-~~~~-.','       .~        ~.','      /   o    o   \\','     /      __      \\','    |    .______ .   |','   /|                |\\','  /_|________________|_\\','    . .  .  . .  . .'],
-  spider:['      \\   \\  /   /','       \\ .----. /','    ____\\|o  o|/____','   /     | oo |     \\','  /   ___|____|___   \\','     /   / || \\   \\','    /   /  ||  \\   \\','   /   /   ||   \\   \\','       . . .. . .'],
-  knight:['         .-===-.','         | _ _ |','         |  ^  |','         |=====|','      ___/|___|\\___','     /  / |   | \\  \\','     | [] | + | [] |','     |____|___|____|','       / /     \\ \\','      /_/       \\_\\'],
-  beast:['       /\\       /\\','      /  \\_____/  \\','      |   o   o   |','      |     ^     |','      \\  \\___/  /','       \\_______/','     ___/       \\___','    /  /         \\  \\','   /__/___________\\__\\','      /_/       \\_\\'],
-  elder:['       .  *  .  *  .','          .----.','       __/ .  . \\__','      /  \\  __  /  \\','   __/ /\\| /__\\ |/\\ \\__','  /___/  |      |  \\___\\','      ___|  ()  |___','     /   |______|   \\','    / /\\  /||\\  /\\ \\','   /_/  \\/_||_\\/  \\_\\'],
-};
+const ENCOUNTER_PORTRAITS=Object.fromEntries(Object.entries({
+wizard:String.raw`          /\
+      .  /::\    *
+        /.*::\
+       /:..*::\
+      /________\
+         (o_o)      .
+        /| - |\   _/
+   ____/ | : | \_/
+  /__/   | : |   \__
+     \   |___|   /
+      \_/|   |\_/
+        /|___|\
+       /_/   \_\
+     .   . @ .   .`,
+drake:String.raw`    /\               /\
+   /  \     __      /  \
+  / /\ \___/o \____/ /\ \
+ / /  \___  __   ___/  \ \
+/_/       \ \__)/       \_\
+     __   /  __\   __
+    /  \_/  /  \\_/  \
+   /____   / /\  ____/
+     __/  / /  \ \__
+    /___ /_/    \___\
+         \  \__/
+   .  .   \___/   .  .`,
+wisp:String.raw`     .        *      .
+        .-~~~~~-.
+    .-~~  .   .  ~~-.
+   / .   /\___/\   . \
+   ~     ( o o )     ~
+    ~.    \_^_/    .~
+      ~-.  | | .-~
+    .   /  | |  \   .
+       / ./   \. \
+      ~ /  | |  \ ~
+    *  ~   | |   ~
+         .  ~   .`,
+slime:String.raw`           .     o
+        .-~~~~~-.
+      .~  .      ~.
+     / .   ____    \
+    /     (o  o) .  \
+   |  .     __       |
+   |      .____.  .  |
+  /|   o          .  |\
+ / |      .    o     | \
+/__|__..________..___|__\
+    ~  ~ . ~ .  ~  ~
+       .       .`,
+spider:String.raw`    \   \           /   /
+     \   \ .-----. /   /
+  ____\___\|o o o|/___/____
+ /         | o o |         \
+/   ______/|\_v_/|\______   \
+   /      /|:::::|\      \
+  /      /  \___/  \      \
+ /      /   / | \   \      \
+       /   /  |  \   \
+      /   /   |   \   \
+         . .  .  . .`,
+knight:String.raw`         .-===-.
+         |.-.-.|
+         ||_ _||
+         |\_^_/|       /
+      ___|=====|___   /
+     /[] /| + |\ []\ /
+    | __/ |___| \__ |\
+    | |   /===\   | | \
+    |_|  |:[ ]:|  |_|
+     /   |__|__|   \
+         / / \ \
+        /_/   \_\ `,
+beast:String.raw`     /\          /\
+    /  \________/  \
+    |  /\      /\  |
+    |  >o<    >o<  |
+    \    \_  _/    /
+     \__  _\/_  __/
+        \______/
+   ____/  : :   \____
+  /   /   : :    \   \
+ /___/___/   \____\___\
+    /_/         \_\
+      .   .   .`,
+boar:String.raw`      /\    ____    /\
+     /  \__/####\__/  \
+    /  __  /##\  __   \
+   |  /o \      / o\  |
+   |  \__/ .--. \__/  |
+  /|  /\  (o  o)  /\  |\
+ / |  \ \__\__/__/ /  | \
+/__|   \___|__|___/   |__\
+   |    /########\    |
+   |___/##/    \##\___|
+     /__/      \__\ `,
+elder:String.raw`     . * .     . * .
+         .-===-.
+     ___/ .   . \___
+    /  /\   o   /\  \
+   /__/  \_____/  \__\
+ __/ /\ | /___\ | /\ \__
+/___/  \|   |   |/  \___\
+     ___|  (o)  |___
+    /   |-------|   \
+   / /\ | /|||\ | /\ \
+  / /  \|/ ||| \|/  \ \
+ /_/    /__|||__\    \_\
+    .  .   |   .  .`,
+eye:String.raw`      .  \  |  /  .
+    .    .-----.
+  .   .-'       '-.   .
+     /  .-------.  \
+    |  /  .---.  \  |
+    | |  / .-. \  | |
+    | | | ( @ ) | | |
+    | |  \ '-' /  | |
+    |  \  '---'  /  |
+     \  '-------'  /
+  .   '-._____.-'   .
+      /  | |  \
+    ~    | |    ~
+         . .`,
+serpent:String.raw`       __/\_/\__
+      /  /o o\  \
+      \  \_V_/  /
+       \_______/
+        /:::::\
+    ___/:::|:::\___
+   /   \:::|:::/   \
+  /     \__|__/     \
+ | .----/:::::\----. |
+ | |   /:::::::\   | |
+  \ '-------------' /
+   '---._______ .--'
+     ~   ~  ~   ~`,
+pixie:String.raw`      .      *      .
+   .-._      /\    _.-.
+  /    \    /__\  /    \
+ | .-.  \  (o o) /  .-. |
+  \___\  \ /|=|\ /  /___/
+       \__\/| |\/__/
+    ___/   /| |\   \___
+   / .    / | | \    . \
+   \_____/  |_|  \_____/
+         .  /\  .
+           /__\
+      *     .     *`,
+harpy:String.raw`    /\        /\        /\
+   /  \      /__\      /  \
+  / /\ \    /o o \    / /\ \
+ / /  \ \___\_v_/___/ /  \ \
+/_/    \____/|||\____/    \_\
+        /  /|||||\  \
+       /__/ ||||| \__\
+           /|||\
+          /_|||_\
+            | |
+           _| |_
+          /_V V_\
+      .     .     .`,
+clock:String.raw`         .-===-.
+      __/ .---. \__
+     /  .' XII '.  \
+    |  /   |     \  |
+    | | IX +--III | |
+    |  \   VI    /  |
+     \  '.___.'   /
+      '---|||---'
+     /  __|||__  \
+    /__/  |||  \__\
+          (o)
+         / | \
+      __/  |  \__
+      .    .    .`
+}).map(([id,art])=>[id,art.split('\n')]));
 let _sceneArtKey='';
 function renderEncounterScene(){
   const root=$('encounter-stage');if(!root)return;
@@ -8434,7 +8602,7 @@ function renderEncounterScene(){
     $('scene-caption').textContent=asciiText(region.policyLabels?.[assignment.policy]||assignment.policy)+' policy / '+Math.ceil((assignment.remainingMs||0)/1000)+'s to next phase / rewards collect automatically.';
     return;
   }
-  const e=G.enemy,name=e?.ref?.name||'',key=!e?'wizard':e.isBoss?(name.match(/Drake|Wyrm/)?'drake':'elder'):name.match(/Slime|Blob/)?'slime':name.match(/Spider/)?'spider':name.match(/Knight|Golem|Guard|Construct/)?'knight':name.match(/Wisp|Spirit|Specter|Nebula/)?'wisp':'beast';
+  const e=G.enemy,name=e?.ref?.name||'',key=!e?'wizard':e.isBoss?(name.match(/Drake|Wyrm/)?'drake':'elder'):name.match(/Eye/)?'eye':name.match(/Naga|Mer|Eel|Salamander/)?'serpent':name.match(/Pixie|Sprite/)?'pixie':name.match(/Harpy|Roc/)?'harpy':name.match(/Chrono|Time|Hour/)?'clock':name.match(/Boar/)?'boar':name.match(/Slime|Blob/)?'slime':name.match(/Spider/)?'spider':name.match(/Knight|Golem|Guard|Construct/)?'knight':name.match(/Horror|Old One|Elder|Fiend|Voidpriest/)?'elder':name.match(/Wisp|Wraith|Spirit|Specter|Nebula/)?'wisp':'beast';
   if(key!==_sceneArtKey){_sceneArtKey=key;$('encounter-art').textContent=ENCOUNTER_PORTRAITS[key].join('\n');}
   $('scene-title').textContent=e?asciiText(name)+(e.isBoss?' / BOSS':''):'Your wizard / '+ZONES[G.zoneIdx].name;
   $('scene-enemy-bar').hidden=!e;

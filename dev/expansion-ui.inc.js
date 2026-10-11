@@ -72,16 +72,183 @@ function renderMagicState(){
     const select=root.querySelector('select');if(select)select.onchange=()=>{setChaosPreference(select.value);renderMagicState();};
   }
 }
-const ENCOUNTER_PORTRAITS={
-  wizard:['          /\\','         /  \\','        / .  \\','       /__*___\\','         (o_o)       *','        /| = |\\     /','       / |   | \\___/','      /__|___|__\\','         /   \\','        /_____\\','     . . . @ . . .'],
-  drake:['       /\\          /\\','      /  \\________/  \\','     / /\\   __   /\\ \\','    / /  \\(oo)/  \\ \\','   /_/    / __ \\    \\_\\','         / /  \\ \\','    ____/ / /\\ \\ \\____','   /_____/ /  \\ \\_____\\','       _/ /    \\ \\_','      /__/      \\__\\'],
-  wisp:['          .   *','      *       .','        .-~~~-.','      .~  o o  ~.','      ~    ^    ~','       ~._____ .~','        / /|\\ \\','       ~ / | \\ ~','        .  |  .','      *    .    *'],
-  slime:['             .','         .-~~~~-.','       .~        ~.','      /   o    o   \\','     /      __      \\','    |    .______ .   |','   /|                |\\','  /_|________________|_\\','    . .  .  . .  . .'],
-  spider:['      \\   \\  /   /','       \\ .----. /','    ____\\|o  o|/____','   /     | oo |     \\','  /   ___|____|___   \\','     /   / || \\   \\','    /   /  ||  \\   \\','   /   /   ||   \\   \\','       . . .. . .'],
-  knight:['         .-===-.','         | _ _ |','         |  ^  |','         |=====|','      ___/|___|\\___','     /  / |   | \\  \\','     | [] | + | [] |','     |____|___|____|','       / /     \\ \\','      /_/       \\_\\'],
-  beast:['       /\\       /\\','      /  \\_____/  \\','      |   o   o   |','      |     ^     |','      \\  \\___/  /','       \\_______/','     ___/       \\___','    /  /         \\  \\','   /__/___________\\__\\','      /_/       \\_\\'],
-  elder:['       .  *  .  *  .','          .----.','       __/ .  . \\__','      /  \\  __  /  \\','   __/ /\\| /__\\ |/\\ \\__','  /___/  |      |  \\___\\','      ___|  ()  |___','     /   |______|   \\','    / /\\  /||\\  /\\ \\','   /_/  \\/_||_\\/  \\_\\'],
-};
+const ENCOUNTER_PORTRAITS=Object.fromEntries(Object.entries({
+wizard:String.raw`          /\
+      .  /::\    *
+        /.*::\
+       /:..*::\
+      /________\
+         (o_o)      .
+        /| - |\   _/
+   ____/ | : | \_/
+  /__/   | : |   \__
+     \   |___|   /
+      \_/|   |\_/
+        /|___|\
+       /_/   \_\
+     .   . @ .   .`,
+drake:String.raw`    /\               /\
+   /  \     __      /  \
+  / /\ \___/o \____/ /\ \
+ / /  \___  __   ___/  \ \
+/_/       \ \__)/       \_\
+     __   /  __\   __
+    /  \_/  /  \\_/  \
+   /____   / /\  ____/
+     __/  / /  \ \__
+    /___ /_/    \___\
+         \  \__/
+   .  .   \___/   .  .`,
+wisp:String.raw`     .        *      .
+        .-~~~~~-.
+    .-~~  .   .  ~~-.
+   / .   /\___/\   . \
+   ~     ( o o )     ~
+    ~.    \_^_/    .~
+      ~-.  | | .-~
+    .   /  | |  \   .
+       / ./   \. \
+      ~ /  | |  \ ~
+    *  ~   | |   ~
+         .  ~   .`,
+slime:String.raw`           .     o
+        .-~~~~~-.
+      .~  .      ~.
+     / .   ____    \
+    /     (o  o) .  \
+   |  .     __       |
+   |      .____.  .  |
+  /|   o          .  |\
+ / |      .    o     | \
+/__|__..________..___|__\
+    ~  ~ . ~ .  ~  ~
+       .       .`,
+spider:String.raw`    \   \           /   /
+     \   \ .-----. /   /
+  ____\___\|o o o|/___/____
+ /         | o o |         \
+/   ______/|\_v_/|\______   \
+   /      /|:::::|\      \
+  /      /  \___/  \      \
+ /      /   / | \   \      \
+       /   /  |  \   \
+      /   /   |   \   \
+         . .  .  . .`,
+knight:String.raw`         .-===-.
+         |.-.-.|
+         ||_ _||
+         |\_^_/|       /
+      ___|=====|___   /
+     /[] /| + |\ []\ /
+    | __/ |___| \__ |\
+    | |   /===\   | | \
+    |_|  |:[ ]:|  |_|
+     /   |__|__|   \
+         / / \ \
+        /_/   \_\ `,
+beast:String.raw`     /\          /\
+    /  \________/  \
+    |  /\      /\  |
+    |  >o<    >o<  |
+    \    \_  _/    /
+     \__  _\/_  __/
+        \______/
+   ____/  : :   \____
+  /   /   : :    \   \
+ /___/___/   \____\___\
+    /_/         \_\
+      .   .   .`,
+boar:String.raw`      /\    ____    /\
+     /  \__/####\__/  \
+    /  __  /##\  __   \
+   |  /o \      / o\  |
+   |  \__/ .--. \__/  |
+  /|  /\  (o  o)  /\  |\
+ / |  \ \__\__/__/ /  | \
+/__|   \___|__|___/   |__\
+   |    /########\    |
+   |___/##/    \##\___|
+     /__/      \__\ `,
+elder:String.raw`     . * .     . * .
+         .-===-.
+     ___/ .   . \___
+    /  /\   o   /\  \
+   /__/  \_____/  \__\
+ __/ /\ | /___\ | /\ \__
+/___/  \|   |   |/  \___\
+     ___|  (o)  |___
+    /   |-------|   \
+   / /\ | /|||\ | /\ \
+  / /  \|/ ||| \|/  \ \
+ /_/    /__|||__\    \_\
+    .  .   |   .  .`,
+eye:String.raw`      .  \  |  /  .
+    .    .-----.
+  .   .-'       '-.   .
+     /  .-------.  \
+    |  /  .---.  \  |
+    | |  / .-. \  | |
+    | | | ( @ ) | | |
+    | |  \ '-' /  | |
+    |  \  '---'  /  |
+     \  '-------'  /
+  .   '-._____.-'   .
+      /  | |  \
+    ~    | |    ~
+         . .`,
+serpent:String.raw`       __/\_/\__
+      /  /o o\  \
+      \  \_V_/  /
+       \_______/
+        /:::::\
+    ___/:::|:::\___
+   /   \:::|:::/   \
+  /     \__|__/     \
+ | .----/:::::\----. |
+ | |   /:::::::\   | |
+  \ '-------------' /
+   '---._______ .--'
+     ~   ~  ~   ~`,
+pixie:String.raw`      .      *      .
+   .-._      /\    _.-.
+  /    \    /__\  /    \
+ | .-.  \  (o o) /  .-. |
+  \___\  \ /|=|\ /  /___/
+       \__\/| |\/__/
+    ___/   /| |\   \___
+   / .    / | | \    . \
+   \_____/  |_|  \_____/
+         .  /\  .
+           /__\
+      *     .     *`,
+harpy:String.raw`    /\        /\        /\
+   /  \      /__\      /  \
+  / /\ \    /o o \    / /\ \
+ / /  \ \___\_v_/___/ /  \ \
+/_/    \____/|||\____/    \_\
+        /  /|||||\  \
+       /__/ ||||| \__\
+           /|||\
+          /_|||_\
+            | |
+           _| |_
+          /_V V_\
+      .     .     .`,
+clock:String.raw`         .-===-.
+      __/ .---. \__
+     /  .' XII '.  \
+    |  /   |     \  |
+    | | IX +--III | |
+    |  \   VI    /  |
+     \  '.___.'   /
+      '---|||---'
+     /  __|||__  \
+    /__/  |||  \__\
+          (o)
+         / | \
+      __/  |  \__
+      .    .    .`
+}).map(([id,art])=>[id,art.split('\n')]));
 let _sceneArtKey='';
 function renderEncounterScene(){
   const root=$('encounter-stage');if(!root)return;
@@ -104,7 +271,7 @@ function renderEncounterScene(){
     $('scene-caption').textContent=asciiText(region.policyLabels?.[assignment.policy]||assignment.policy)+' policy / '+Math.ceil((assignment.remainingMs||0)/1000)+'s to next phase / rewards collect automatically.';
     return;
   }
-  const e=G.enemy,name=e?.ref?.name||'',key=!e?'wizard':e.isBoss?(name.match(/Drake|Wyrm/)?'drake':'elder'):name.match(/Slime|Blob/)?'slime':name.match(/Spider/)?'spider':name.match(/Knight|Golem|Guard|Construct/)?'knight':name.match(/Wisp|Spirit|Specter|Nebula/)?'wisp':'beast';
+  const e=G.enemy,name=e?.ref?.name||'',key=!e?'wizard':e.isBoss?(name.match(/Drake|Wyrm/)?'drake':'elder'):name.match(/Eye/)?'eye':name.match(/Naga|Mer|Eel|Salamander/)?'serpent':name.match(/Pixie|Sprite/)?'pixie':name.match(/Harpy|Roc/)?'harpy':name.match(/Chrono|Time|Hour/)?'clock':name.match(/Boar/)?'boar':name.match(/Slime|Blob/)?'slime':name.match(/Spider/)?'spider':name.match(/Knight|Golem|Guard|Construct/)?'knight':name.match(/Horror|Old One|Elder|Fiend|Voidpriest/)?'elder':name.match(/Wisp|Wraith|Spirit|Specter|Nebula/)?'wisp':'beast';
   if(key!==_sceneArtKey){_sceneArtKey=key;$('encounter-art').textContent=ENCOUNTER_PORTRAITS[key].join('\n');}
   $('scene-title').textContent=e?asciiText(name)+(e.isBoss?' / BOSS':''):'Your wizard / '+ZONES[G.zoneIdx].name;
   $('scene-enemy-bar').hidden=!e;

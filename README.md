@@ -41,6 +41,10 @@ with a map view one click away. It groups related systems into chapters
 and adapts the navigation for smaller screens. Equipment crafting, gems, and
 detailed character attributes fold away when you do not need them.
 
+Fourteen detailed character and creature portraits and six illustrated
+expedition scenes use plain ASCII. Each drawing keeps its character alignment
+as a single centered block, including on narrow screens.
+
 | Chapter | Contents |
 |---|---|
 | Adventure | Encounter portraits and map, atlas, Pinnacle Trials, six Expeditions, Journal |

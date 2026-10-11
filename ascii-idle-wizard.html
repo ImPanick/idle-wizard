@@ -20,7 +20,7 @@
   --mat-dust:#c8b896;--mat-crystal:#6cb8ec;--mat-gem:#b095e8;--mat-herb:#86d8a0;
   --map-ground:#1a1a26;--map-deco:#28283a;--mob:#e8888e;
   --row-divider:#22223a;--legendary-glow:rgba(232,196,82,0.22);
-  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,"Segoe UI Symbol","Apple Symbols",monospace;
 }
 body[data-theme="darkblue"]{
 
@@ -625,7 +625,7 @@ body[data-theme="light"] .panel h2,body[data-theme="lightblue"] .panel h2{border
 .nav-group[open]>summary::after{content:'-'}
 .nav-items{display:flex;flex-direction:column;gap:3px}
 .tab-btn{display:flex;align-items:center;gap:10px;width:100%;font-size:12px;line-height:1.4;letter-spacing:0;text-align:left;padding:8px 10px;background:transparent;border:1px solid transparent;color:var(--dim);min-height:34px}
-.tab-btn .nav-glyph{font-size:13px;min-width:16px;text-align:center;opacity:.7}
+.tab-btn .nav-glyph{font-family:"Segoe UI Symbol","Apple Symbols","DejaVu Sans",sans-serif;font-size:16px;min-width:18px;text-align:center;opacity:.8;font-variant-emoji:text}
 .tab-btn .nav-short{margin-left:auto;font-size:9px;opacity:.6}
 .tab-btn .nav-lock{margin-left:auto;font-size:9px;color:var(--dim);opacity:.75}
 .tab-btn.is-locked{opacity:.65}
@@ -895,37 +895,37 @@ button,select,summary,.el-group-header,.auto-cfg{min-height:44px!important}butto
     <details class="nav-group" data-nav="adventure" open>
       <summary>Adventure</summary>
       <div class="nav-items">
-        <button class="tab-btn active" data-tab="world"><span class="nav-glyph" aria-hidden="true">@</span>World</button>
-        <button class="tab-btn" data-tab="trials"><span class="nav-glyph" aria-hidden="true">/\</span>Trials</button>
-        <button class="tab-btn" data-tab="crusade"><span class="nav-glyph" aria-hidden="true">&gt;&gt;</span>Expeditions</button>
-        <button class="tab-btn" data-tab="journal"><span class="nav-glyph" aria-hidden="true">[?]</span>Journal</button>
+        <button class="tab-btn active" data-tab="world"><span class="nav-glyph" aria-hidden="true">&#x2637;</span>World</button>
+        <button class="tab-btn" data-tab="trials"><span class="nav-glyph" aria-hidden="true">&#x25B3;</span>Trials</button>
+        <button class="tab-btn" data-tab="crusade"><span class="nav-glyph" aria-hidden="true">&#x27A4;</span>Expeditions</button>
+        <button class="tab-btn" data-tab="journal"><span class="nav-glyph" aria-hidden="true">&#x2261;</span>Journal</button>
       </div>
     </details>
     <details class="nav-group" data-nav="wizard" open>
       <summary>Wizard</summary>
       <div class="nav-items">
-        <button class="tab-btn" data-tab="spells"><span class="nav-glyph" aria-hidden="true">[*]</span>Spellbook</button>
-        <button class="tab-btn" data-tab="elements"><span class="nav-glyph" aria-hidden="true">&lt;&gt;</span>Elements</button>
-        <button class="tab-btn" data-tab="gear"><span class="nav-glyph" aria-hidden="true">/!</span>Equipment</button>
+        <button class="tab-btn" data-tab="spells"><span class="nav-glyph" aria-hidden="true">&#x2726;</span>Spellbook</button>
+        <button class="tab-btn" data-tab="elements"><span class="nav-glyph" aria-hidden="true">&#x25C7;</span>Elements</button>
+        <button class="tab-btn" data-tab="gear"><span class="nav-glyph" aria-hidden="true">&#x2694;&#xFE0E;</span>Equipment</button>
       </div>
     </details>
     <details class="nav-group" data-nav="sanctum" open>
       <summary>Sanctum</summary>
       <div class="nav-items">
-        <button class="tab-btn" data-tab="manor"><span class="nav-glyph" aria-hidden="true">^</span>Manor</button>
-        <button class="tab-btn" data-tab="research"><span class="nav-glyph" aria-hidden="true">[?]</span>Research</button>
-        <button class="tab-btn" data-tab="tower"><span class="nav-glyph" aria-hidden="true">|^|</span>Magic Tower</button>
-        <button class="tab-btn" data-tab="legendary"><span class="nav-glyph" aria-hidden="true">/X</span>Legendary Forge</button>
-        <button class="tab-btn" data-tab="alchemy"><span class="nav-glyph" aria-hidden="true">[_]</span>Alchemy</button>
-        <button class="tab-btn" data-tab="golems"><span class="nav-glyph" aria-hidden="true">[o]</span>Golems</button>
-        <button class="tab-btn" data-tab="familiars"><span class="nav-glyph" aria-hidden="true">:3</span>Familiars</button>
-        <button class="tab-btn" data-tab="ritual"><span class="nav-glyph" aria-hidden="true">(*)</span>Ritual</button>
+        <button class="tab-btn" data-tab="manor"><span class="nav-glyph" aria-hidden="true">&#x2302;</span>Manor</button>
+        <button class="tab-btn" data-tab="research"><span class="nav-glyph" aria-hidden="true">&#x2315;</span>Research</button>
+        <button class="tab-btn" data-tab="tower"><span class="nav-glyph" aria-hidden="true">&#x265C;</span>Magic Tower</button>
+        <button class="tab-btn" data-tab="legendary"><span class="nav-glyph" aria-hidden="true">&#x2692;&#xFE0E;</span>Legendary Forge</button>
+        <button class="tab-btn" data-tab="alchemy"><span class="nav-glyph" aria-hidden="true">&#x2697;&#xFE0E;</span>Alchemy</button>
+        <button class="tab-btn" data-tab="golems"><span class="nav-glyph" aria-hidden="true">&#x25A3;</span>Golems</button>
+        <button class="tab-btn" data-tab="familiars"><span class="nav-glyph" aria-hidden="true">&#x265E;</span>Familiars</button>
+        <button class="tab-btn" data-tab="ritual"><span class="nav-glyph" aria-hidden="true">&#x25CE;</span>Ritual</button>
       </div>
     </details>
     <details class="nav-group" data-nav="legacy" open>
       <summary>Legacy</summary>
       <div class="nav-items">
-        <button class="tab-btn" data-tab="awaken"><span class="nav-glyph" aria-hidden="true">*</span>Awakening</button>
+        <button class="tab-btn" data-tab="awaken"><span class="nav-glyph" aria-hidden="true">&#x2727;</span>Awakening</button>
       </div>
     </details>
     <p class="nav-footnote"><strong>One file. Endless possibility.</strong><br>No account. No autosave.<br>Export before you leave.</p>
@@ -1197,14 +1197,14 @@ const AWAKEN_ZONE=3; // Ember Drake defeated, Tideglass unlocked this run.
 // ============================================================
 const ELEMENTS=['fire','water','earth','air','light','shadow','blood','arcane'];
 const EL_INFO={
-  fire:{name:'Fire',glyph:'*',desc:'Raw damage, burn.'},
-  water:{name:'Water',glyph:'~',desc:'Heal, slow, mana.'},
-  earth:{name:'Earth',glyph:'^',desc:'Heavy hits, defense.'},
-  air:{name:'Air',glyph:'%',desc:'Speed, fast strikes.'},
-  light:{name:'Light',glyph:'+',desc:'Crit, holy damage.'},
-  shadow:{name:'Shadow',glyph:'-',desc:'DoT, life leech.'},
-  blood:{name:'Blood',glyph:'!',desc:'20% lifesteal | weak vs undead.'},
-  arcane:{name:'Arcane',glyph:'=',desc:'Pure mana. Neutral to all elements. Unlocked after first Awakening.'},
+  fire:{name:'Fire',glyph:'✦',desc:'Raw damage, burn.'},
+  water:{name:'Water',glyph:'◈',desc:'Heal, slow, mana.'},
+  earth:{name:'Earth',glyph:'◆',desc:'Heavy hits, defense.'},
+  air:{name:'Air',glyph:'✺',desc:'Speed, fast strikes.'},
+  light:{name:'Light',glyph:'✷',desc:'Crit, holy damage.'},
+  shadow:{name:'Shadow',glyph:'✶',desc:'DoT, life leech.'},
+  blood:{name:'Blood',glyph:'♦',desc:'20% lifesteal | weak vs undead.'},
+  arcane:{name:'Arcane',glyph:'❉',desc:'Pure mana. Neutral to all elements. Unlocked after first Awakening.'},
 };
 const EL_MATCHUP={
   fire:{strong:'air',weak:'water'},
@@ -1784,7 +1784,7 @@ const ALCHEMY_LVL_CAP=100;
 //               (crit, spd, dmgMul) where flat numbers ARE percentages
 //   statModPct -- percentage-of-current-stat reductions for absolute stats
 //               (atk, def, manaRegen); resolved at apply time against hero stat
-// All authored glyphs are printable ASCII; no emoji or presentation selectors.
+// Ailment markers use printable ASCII.
 // Ailment names accompany their one-character markers.
 const AILMENT_TYPES={
   burn:       {name:'Burn',       glyph:'~',       element:'fire',   kind:'dot',   basePctHp:1.5, baseDur:5},
@@ -4708,12 +4708,9 @@ function renderOfflineGains(){
 // ============================================================
 // SAVE / LOAD
 // ============================================================
-// Unicode-safe base64. btoa/atob only accept Latin-1 (<=U+00FF), so we go
-// through UTF-8 bytes explicitly. The old escape/unescape trick is deprecated
-// (Annex B), mishandles surrogate pairs, and the decode side throws URIError
-// on some inputs -- that's the "works on most devices, breaks on a few" bug.
-// Decode also strips whitespace (clipboards line-wrap), accepts URL-safe
-// alphabet (-/_), and re-pads if the trailing '=' was trimmed.
+// Base64 wraps UTF-8 bytes, independently of the fonts used to display labels.
+// Normalize clipboard wrapping, URL-safe alphabet, and omitted padding for
+// both current UTF-8 saves and older direct Latin-1 saves.
 function utf8ToB64(s){
   const bytes=new TextEncoder().encode(s);
   let bin='';
@@ -4724,13 +4721,16 @@ function utf8ToB64(s){
   }
   return btoa(bin);
 }
-function b64ToUtf8(s){
+function decodeBase64(s){
   s=String(s).replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');
   while(s.length%4)s+='=';
-  const bin=atob(s);
+  return atob(s);
+}
+function b64ToUtf8(s){
+  const bin=decodeBase64(s);
   const bytes=new Uint8Array(bin.length);
   for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-  return new TextDecoder('utf-8',{fatal:false}).decode(bytes);
+  return new TextDecoder('utf-8',{fatal:true}).decode(bytes);
 }
 function exportSave(){
   settleClockForAction();
@@ -4797,7 +4797,7 @@ function buildImportedState(d,now=Date.now()){
     return value;
   };
   const text=(value,fallback,max=80)=>typeof value==='string'
-    ? value.replace(/[<>"'&\u0000-\u001f\u007f]/g,'').trim().slice(0,max)||fallback : fallback;
+    ? Array.from(value.replace(/[<>"'&\u0000-\u001f\u007f]/g,'').trim()).slice(0,max).join('')||fallback : fallback;
   const has=(table,key)=>typeof key==='string'&&Object.prototype.hasOwnProperty.call(table,key);
   const flags=(value,ids,label)=>{
     const source=obj(value,label),out={};
@@ -5032,7 +5032,11 @@ function importSave(str){
     let d;
     try{ d=JSON.parse(b64ToUtf8(str.trim())); }
     catch(_){
-      try{d=JSON.parse(atob(str.trim()));}
+      try{
+        d=JSON.parse(decodeBase64(str.trim()));
+        // Current saves must be valid UTF-8; never turn damaged bytes into labels.
+        if((d?.v??1)>=29)throw Error('Invalid UTF-8 save.');
+      }
       catch(_){throw Error('That code could not be read. Copy the complete exported save code and try again.');}
     }
     const save=buildImportedState(d);
@@ -5206,13 +5210,16 @@ function lootTooltip(l){
   const detail=(l.gold||l.xp)?`Claimed: +${fmt(l.gold||0)} g | +${fmt(l.xp||0)} xp`:'';
   return [head,detail,`Decays in ${Math.ceil(l.ttl)}s`].filter(Boolean).join('\n');
 }
-// Keep player-owned Unicode in saves, but draw labels with portable ASCII.
-// Accented letters remain readable; other codepoints get an explicit fallback.
+// Preserve visible Unicode. Show invisible controls explicitly so imported
+// labels cannot hide text or change the direction of surrounding interface text.
 function asciiText(value){
-  const text=String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  return Array.from(text,ch=>{
+  return Array.from(String(value??''),ch=>{
     const code=ch.codePointAt(0);
-    return (code>=32&&code<=126)||ch==='\n'||ch==='\t'?ch:'[U+'+code.toString(16).toUpperCase().padStart(4,'0')+']';
+    const control=(code<32&&ch!=='\n'&&ch!=='\t')||(code>=0x7f&&code<=0x9f)
+      ||(code>=0xd800&&code<=0xdfff)||code===0x061c||code===0x200b
+      ||(code>=0x200e&&code<=0x200f)||(code>=0x202a&&code<=0x202e)
+      ||code===0x2060||(code>=0x2066&&code<=0x2069)||code===0xfeff;
+    return control?'[U+'+code.toString(16).toUpperCase().padStart(4,'0')+']':ch;
   }).join('');
 }
 function escAttr(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -7698,10 +7705,10 @@ const SCHOOL_REGISTRY={
   cosmic:{gate:5,color:'#a6b4ff',abbr:'Co'}
 };
 Object.assign(EL_INFO,{
-  nature:{name:'Nature',glyph:'&',desc:'Grow Seeds; harvest life or damage.'},
-  resonance:{name:'Resonance',glyph:':',desc:'Spend the last three casting notes.'},
-  chaos:{name:'Chaos',glyph:'?',desc:'Read and manipulate a saved outcome sequence.'},
-  cosmic:{name:'Cosmic',glyph:'o',desc:'Finite orbits and delayed consequences.'}
+  nature:{name:'Nature',glyph:'♣',desc:'Grow Seeds; harvest life or damage.'},
+  resonance:{name:'Resonance',glyph:'♫',desc:'Spend the last three casting notes.'},
+  chaos:{name:'Chaos',glyph:'⚄',desc:'Read and manipulate a saved outcome sequence.'},
+  cosmic:{name:'Cosmic',glyph:'☄',desc:'Finite orbits and delayed consequences.'}
 });
 for(const id of Object.keys(SCHOOL_REGISTRY)){
   if(!ELEMENTS.includes(id))ELEMENTS.push(id);
@@ -8341,7 +8348,7 @@ function advanceExpedition(seconds){
 }
 // END EMBEDDED expeditions
 // BEGIN EMBEDDED expansion-ui
-// Expansion presentation. Inlined before init; all art and UI labels use ASCII.
+// Expansion presentation. Inlined before init; illustrations use plain ASCII.
 function uiVisibleSchools(){return typeof visibleSchools==='function'?visibleSchools():ELEMENTS.filter(e=>e!=='arcane'||isArcaneUnlocked());}
 function uiSchoolUnlocked(id){return uiVisibleSchools().includes(id);}
 function uiSpellUsable(sp){return !!sp&&uiSchoolUnlocked(sp.element)&&G.knownSpells.includes(sp.id);}

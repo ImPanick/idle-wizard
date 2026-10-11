@@ -1,4 +1,4 @@
-// Expansion presentation. Inlined before init; all art and UI labels use ASCII.
+// Expansion presentation. Inlined before init; illustrations use plain ASCII.
 function uiVisibleSchools(){return typeof visibleSchools==='function'?visibleSchools():ELEMENTS.filter(e=>e!=='arcane'||isArcaneUnlocked());}
 function uiSchoolUnlocked(id){return uiVisibleSchools().includes(id);}
 function uiSpellUsable(sp){return !!sp&&uiSchoolUnlocked(sp.element)&&G.knownSpells.includes(sp.id);}

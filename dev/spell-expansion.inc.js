@@ -9,10 +9,10 @@ const SCHOOL_REGISTRY={
   cosmic:{gate:5,color:'#a6b4ff',abbr:'Co'}
 };
 Object.assign(EL_INFO,{
-  nature:{name:'Nature',glyph:'&',desc:'Grow Seeds; harvest life or damage.'},
-  resonance:{name:'Resonance',glyph:':',desc:'Spend the last three casting notes.'},
-  chaos:{name:'Chaos',glyph:'?',desc:'Read and manipulate a saved outcome sequence.'},
-  cosmic:{name:'Cosmic',glyph:'o',desc:'Finite orbits and delayed consequences.'}
+  nature:{name:'Nature',glyph:'♣',desc:'Grow Seeds; harvest life or damage.'},
+  resonance:{name:'Resonance',glyph:'♫',desc:'Spend the last three casting notes.'},
+  chaos:{name:'Chaos',glyph:'⚄',desc:'Read and manipulate a saved outcome sequence.'},
+  cosmic:{name:'Cosmic',glyph:'☄',desc:'Finite orbits and delayed consequences.'}
 });
 for(const id of Object.keys(SCHOOL_REGISTRY)){
   if(!ELEMENTS.includes(id))ELEMENTS.push(id);

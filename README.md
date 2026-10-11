@@ -70,12 +70,16 @@ There are **7 palettes**: Field Grimoire, Midnight Grimoire (default), Dark Fore
 Light Warm, Light Blue, Amber CRT, and High Contrast. Your exported save includes
 the selected palette and density. Reduced motion follows your system preference.
 
-All built-in art, icons, labels, and messages use **printable ASCII**. Map glyphs
-occupy one character each, and font ligatures are disabled. There are no emoji,
-box-drawing characters, icon fonts, or downloaded fonts. Imported names keep their
-original text in saves; their display uses ASCII letters where possible and
-`[U+XXXX]` notation for other characters. This avoids requiring those glyphs in
-the device's fonts; the game itself still requires a current browser.
+Portraits, landscapes, and map grids use **plain ASCII**. Map glyphs occupy one
+character each, and font ligatures are disabled. Element and navigation symbols
+use richer Unicode glyphs with system font fallbacks, prioritizing Windows.
+There are no external assets, icon fonts, or downloaded fonts. Mobile layouts
+remain responsive, with readable navigation labels.
+
+Visible Unicode names retain their original characters in saves and on screen.
+Labels are escaped as HTML, and invisible controls use `[U+XXXX]` notation.
+UTF-8 Base64 saves preserve the text independently of the device's glyph fonts;
+older direct Latin-1 saves remain importable. The game requires a current browser.
 
 | Key | Action |
 |---|---|

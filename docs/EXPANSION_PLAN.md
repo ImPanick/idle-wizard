@@ -371,7 +371,7 @@ The numbers and encounter above are illustrative. Avoid fixed-width full-screen 
 ### Detail and accessibility
 
 - Match the reference's scale and hierarchy: creature art is the focal point, with compact controls around it.
-- Use CSS borders and printable punctuation for scenes. Replace tiny bitmap utility icons with short text labels or ASCII markers.
+- Use CSS borders and plain ASCII for scenes. Use Unicode element and navigation symbols with system fonts and readable labels, prioritizing Windows.
 - Use readable body text, approximately 44-pixel touch targets, and at least 16-pixel text in editable fields.
 - Keep every essential detail available through touch and keyboard. Hover may add convenience.
 - Mobile gets one primary column. Desktop can show an adjacent management pane while keeping the same navigation and encounter hierarchy.
@@ -499,7 +499,7 @@ Sequence can overlap in design and art production. Runtime systems and releases 
 6. **Performance:** Benchmark a twelve-hour worst-case catch-up on a recorded reference device. Aim for under 50 ms of simulation work, excluding rendering; otherwise process bounded chunks without dropping elapsed time or freezing input. Perform a real Chrome overnight soak in addition to simulated lifecycle tests.
 7. **Save integrity:** Round-trip old fixtures and every new resource state, including full legal inventories, completed and pending rewards, RNG position, Redshift debt, notes, Seeds, and summon charges. Failed imports leave the existing game intact.
 8. **Build integrity:** Exercise reaction chains, cooldown manipulation, overhealing, delayed damage, boss control, summon replacement, and priority starvation. No infinite loop or unlimited resource growth is permitted.
-9. **Presentation:** Check desktop and narrow mobile layouts, keyboard and touch, high contrast and reduced motion, long numbers, and imported names. Scan built-in runtime text and art for non-ASCII glyphs.
+9. **Presentation:** Check desktop and narrow mobile layouts, keyboard and touch, high contrast and reduced motion, long numbers, and imported names. Verify illustrations and map cells remain plain ASCII; verify Unicode UI symbols render on Windows and survive UTF-8 Base64 save imports.
 10. **Portability:** One HTML file, no runtime network access, no browser persistence, no external assets, and an explicitly measured size within the project's budget.
 
 ## First implementation package

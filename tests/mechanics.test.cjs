@@ -59,31 +59,30 @@ test('the game remains one self-contained document with explicit save control', 
   assert.doesNotMatch(script, /\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(/);
 });
 
-test('authored text and HTML entities stay within the portable ASCII character set', () => {
-  assert.doesNotMatch(html, /[^\x09\x0a\x0d\x20-\x7e]/u);
+test('Unicode interface text declares UTF-8 and excludes hidden controls and broken characters', () => {
+  assert.match(html, /<meta\s+charset=["']utf-8["']>/i);
+  assert.doesNotMatch(html, /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u061c\u200b\u200e\u200f\u202a-\u202e\u2060\u2066-\u2069\ufeff\ufffd]/u);
   for (const match of html.matchAll(/&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]+);/gi)) {
     const entity = match[1];
     if (entity.startsWith('#')) {
       const code = entity[1].toLowerCase() === 'x' ? parseInt(entity.slice(2), 16) : Number(entity.slice(1));
-      assert.ok(code >= 32 && code <= 126, `Non-ASCII entity: ${match[0]}`);
-    } else assert.ok(['amp', 'lt', 'gt', 'quot', 'apos'].includes(entity), `Non-ASCII entity: ${match[0]}`);
+      assert.ok(code >= 32 && code <= 0x10ffff && !(code>=0x7f&&code<=0x9f) && !(code>=0xd800&&code<=0xdfff), `Invalid character entity: ${match[0]}`);
+    } else assert.ok(['amp', 'lt', 'gt', 'quot', 'apos'].includes(entity), `Unexpected entity: ${match[0]}`);
   }
 });
 
-test('all map and content glyphs occupy one printable ASCII cell', () => {
+test('maps and illustrated portraits retain their printable ASCII grid', () => {
   const { run } = game();
   assert.equal(run(`(() => {
     const palettes=[...ZONES.map(z=>z.palette),DUNGEON_PALETTE,TRIAL_PALETTE];
     const glyphs=[...palettes.flatMap(p=>Object.values(p)),
       ...ZONES.flatMap(z=>[...z.enemies,z.boss].map(e=>e.glyph)),
       ...Object.values(CHEST_TIERS).map(c=>c.glyph),
-      ...Object.values(EL_INFO).map(e=>e.glyph),
-      ...Object.values(AILMENT_TYPES).map(a=>a.glyph),
-      ...FAMILIAR_TYPES.map(f=>f.glyph),...POTION_RECIPES.map(p=>p.glyph),
       ...BG_SIGILS,trialBossRef(100).glyph];
+    const art=[...Object.values(ENCOUNTER_PORTRAITS).map(rows=>rows.join('\\n')),...EXPEDITION_REGIONS.map(r=>r.portrait)];
     return glyphs.every(g=>g.length===1&&g.charCodeAt(0)>=33&&g.charCodeAt(0)<=126)
       &&palettes.every(p=>new Set(Object.values(p)).size===3)
-      &&new Set(Object.values(EL_INFO).map(e=>e.glyph)).size===ELEMENTS.length;
+      &&art.every(text=>/^[\\x20-\\x7e\\n]+$/.test(text));
   })()`), true);
 });
 
@@ -461,13 +460,13 @@ test('legitimately generated gear of every tier and rarity survives save validat
   assert.equal(run('gearSignature()'), run('beforeGear'));
 });
 
-test('portable label formatting handles accents, symbols and invisible controls', () => {
+test('label formatting preserves accents and symbols while exposing invisible controls', () => {
   const { run } = game();
-  assert.equal(run("asciiText('M\\u00FDr\\u00EB \\u9F99 \\u{1F409} \\u202E')"), 'Myre [U+9F99] [U+1F409] [U+202E]');
-  assert.equal(run("asciiHTML('<M\\u00FDr\\u00EB & \\u9F99>')"), '&lt;Myre &amp; [U+9F99]&gt;');
+  assert.equal(run("asciiText('M\\u00FDr\\u00EB \\u9F99 \\u{1F409} \\u202E')"), 'Mýrë 龙 🐉 [U+202E]');
+  assert.equal(run("asciiHTML('<M\\u00FDr\\u00EB & \\u9F99>')"), '&lt;Mýrë &amp; 龙&gt;');
 });
 
-test('Unicode save labels survive while gear, familiars, buffs and logs render in ASCII', () => {
+test('Unicode save labels remain visible in gear, familiars, buffs and logs', () => {
   const { run, node } = game();
   run(`G.hero.lvl=16;G.autoExplore=false;recomputeStats();
     const label='M\\u00FDr\\u00EB \\u9F99';
@@ -486,10 +485,10 @@ test('Unicode save labels survive while gear, familiars, buffs and logs render i
   assert.equal(run('G.buffs[0].name'), 'M\u00FDr\u00EB \u9F99');
   run('renderGear();renderFamiliars();renderHero();logLine(G.gear.staff.name);renderLog();');
   for (const id of ['gear-grid','inventory-list','familiar-list','buff-strip','log']) {
-    assert.doesNotMatch(node(id).innerHTML, /[^\x09\x0a\x0d\x20-\x7e]/, id);
-    assert.match(node(id).innerHTML, /Myre \[U\+9F99\]/, id);
+    assert.match(node(id).innerHTML, /Mýrë 龙/u, id);
+    assert.doesNotMatch(node(id).innerHTML, /\[U\+9F99\]/, id);
   }
-  assert.doesNotMatch(run('gearCompareText(G.gear.staff)'), /[^\x09\x0a\x0d\x20-\x7e]/);
+  assert.match(node('gear-grid').innerHTML,/Flame 🔥/u);
   assert.equal(run('JSON.parse(b64ToUtf8(exportSave())).gear.staff.name'), 'M\u00FDr\u00EB \u9F99');
 });
 

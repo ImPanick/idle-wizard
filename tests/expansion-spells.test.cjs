@@ -18,10 +18,10 @@ function game(){
     function cast(id,target){return castSpell(SPELLS.find(s=>s.id===id),target);}`);
   return {run};
 }
-test('80 spells preserve existing Arcane prices and have twelve distinct printable school glyphs',()=>{
+test('80 spells preserve existing Arcane prices and have twelve distinct visible Unicode school symbols',()=>{
   const {run}=game();assert.equal(run('SPELLS.length'),80);assert.equal(run('EXPANSION_SPELLS.length'),28);
   assert.equal(run('new Set(ELEMENTS.map(id=>EL_INFO[id].glyph)).size'),12);
-  assert.equal(run('ELEMENTS.every(id=>/^[ -~]$/.test(EL_INFO[id].glyph))'),true);
+  assert.equal(run('ELEMENTS.every(id=>Array.from(EL_INFO[id].glyph).length===1&&EL_INFO[id].glyph.codePointAt(0)>126)'),true);
   assert.deepEqual(JSON.parse(run('JSON.stringify(SPELLS.filter(s=>s.element===\'arcane\'&&!s.expansion).map(s=>s.learnCost))')),[8000,32000,90000,160000,280000,800000]);
 });
 test('school gates enforce learning, equipping and direct casting; Cosmic reveals exactly at fifth Awakening',()=>{

@@ -8,7 +8,7 @@ const start=html.indexOf('// BEGIN EMBEDDED foundation');
 const ending=html.match(/\ninit\(\);\s*<\/script>/);
 if(start<0||!ending||ending.index<start)throw Error('Embedded source boundaries missing.');
 let embedded='';
-for(const name of ['foundation','spell-expansion','expeditions','expansion-ui','auto-sell','gem-tools','inventory-ui']){
+for(const name of ['foundation','spell-expansion','expeditions','expansion-ui','auto-sell','gem-tools','inventory-ui','refinement','artificer','commissions','economy-ui','navigation']){
   const begin=`// BEGIN EMBEDDED ${name}`,end=`// END EMBEDDED ${name}`;
   const source=fs.readFileSync(path.join(__dirname,name+'.inc.js'),'utf8').trim();
   const block=begin+'\n'+source+'\n'+end+'\n';

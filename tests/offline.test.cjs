@@ -255,7 +255,7 @@ test('v29 saves and legacy v28 migration preserve both available and spent Earth
       const code=exportSave();const savedVersion=JSON.parse(b64ToUtf8(code)).v;
       const restored=importSave(code);const legacy=JSON.parse(b64ToUtf8(code));legacy.v=28;
       const migrated=buildImportedState(legacy).state;`);
-    assert.equal(run('savedVersion'), 29);
+    assert.equal(run('savedVersion'), 30);
     assert.equal(run('restored'), true, run('lastSaveError'));
     assert.equal(run('G.buffs[0]._guardReady'), ready);
     assert.equal(run('migrated.buffs[0]._guardReady'), ready);

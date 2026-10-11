@@ -44,6 +44,7 @@ function renderGameSpeed(){
 }
 function advanceAssignmentResources(seconds,flow={}){
   if(seconds<=0)return;
+  advanceCommissions(0);
   const goldRate=G.baseStats.goldPerSec||0,initialGold=G.gold;
   if(goldRate)G.gold+=goldRate*seconds;
   for(const g of GOLEM_TYPES)G.materials[g.yields]+=g.rate*(G.golems[g.id]||0)*seconds;
@@ -68,6 +69,8 @@ function advanceAssignmentResources(seconds,flow={}){
 }
 function assignmentAilmentDps(){return (G.hero.ailments||[]).reduce((sum,a)=>sum+(a.remaining>0?(a.dps||0):0),0);}
 function nextAssignmentResourceBoundary(profile){
+  advanceCommissions(0);
+  runPurchaseRules();
   let next=Infinity;
   if(G.ritual.active&&isRitualUnlocked()&&G.hero.alive){
     const r=ritualCfg(),goldDrain=r.goldCost-(G.baseStats.goldPerSec||0),manaDrain=r.manaCost-(profile.manaRegen-profile.manaPerSec);
@@ -78,6 +81,8 @@ function nextAssignmentResourceBoundary(profile){
   const speed=G.baseStats.researchSpeed||1;
   if(G.researchActive)next=Math.min(next,G.researchActive.timeLeft/speed);
   const goldRate=(G.baseStats.goldPerSec||0)-(G.ritual.active?ritualCfg().goldCost:0);
+  next=Math.min(next,commissionBoundarySeconds(goldRate));
+  next=Math.min(next,purchaseRuleBoundarySeconds(goldRate));
   if(!G.researchActive&&isAutoResearch()&&goldRate>0){
     const project=RESEARCH_PROJECTS.filter(r=>!G.researchCompleted[r.id]&&r.cost>G.gold).sort((a,b)=>a.cost-b.cost)[0];
     if(project)next=Math.min(next,(project.cost-G.gold)/goldRate);

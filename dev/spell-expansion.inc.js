@@ -31,7 +31,7 @@ function spellUsable(value,state=G){
   const sp=typeof value==='string'?SPELLS.find(s=>s.id===value):value;
   return !!sp&&schoolUnlocked(sp.element,state)&&state.knownSpells.includes(sp.id);
 }
-function activeEquippedSpells(){return G.equippedSpells.slice(0,maxSpellSlots()).map(id=>SPELLS.find(s=>s.id===id)).filter(sp=>spellUsable(sp));}
+function activeEquippedSpells(){return G.equippedSpells.slice(0,maxSpellSlots()).map(id=>SPELLS.find(s=>s.id===id)).filter(sp=>spellUsable(sp)).map(sp=>refinedSpell(sp));}
 const EXPANSION_SPELLS=[
   ['emberfamiliar','Ember Familiar','fire',18,0,24,1200,'One ember sprite feeds burns for 12s. Its pulses cannot trigger reactions.','summon'],
   ['purifyingcurrent','Purifying Current','water',14,0,9,1500,'Cleanse one damaging ailment; Soak the target only when cleansing succeeds.','utility'],
@@ -95,9 +95,9 @@ function unpackEnemyMagic(enemy,raw){const value=normalizeEnemyMagic(arguments.l
 function plantSeed(e){const seeds=enemyMagic(e).seeds;if(e.hp>0&&seeds.length<3)seeds.push(4);}
 function matureSeeds(e){return enemyMagic(e).seeds.filter(t=>t<=0).length;}
 function consumeSeeds(e,matureOnly=true){const m=enemyMagic(e),count=matureOnly?matureSeeds(e):m.seeds.length;m.seeds=matureOnly?m.seeds.filter(t=>t>0):[];return count;}
-function spellPower(sp,base=sp.dmg,stats=G.baseStats){
+function spellPower(sp,base,stats=G.baseStats){
   const lvl=G.elements[sp.element]||0,gear=elementBonusFromGear();
-  return base*(1+0.1*lvl)*stats.dmgMul*(1+(gear[sp.element]||0)+(gear._all||0))*masteryBonus(sp.id)*(1+0.05*G.hero.lvl)*(1+effectTagSum('elementLevelDmg')*lvl);
+  return (base===undefined?sp.dmg:base*(sp.expansion?sp._refinementPower||1:1))*(1+0.1*lvl)*stats.dmgMul*(1+(gear[sp.element]||0)+(gear._all||0))*masteryBonus(sp.id)*(1+0.05*G.hero.lvl)*(1+effectTagSum('elementLevelDmg')*lvl);
 }
 function creditExpansionAffinity(sp,damage){if(damage>0){G.elementXp[sp.element]+=Math.ceil(damage*0.04*G.baseStats.elXpMul);while(G.elementXp[sp.element]>=xpForElement(G.elements[sp.element])){G.elementXp[sp.element]-=xpForElement(G.elements[sp.element]);G.elements[sp.element]++;}}}
 function spellSecondaryHit(sp,e,power,trueDamage=false,credit=false){const damage=dealDamage(e,Math.floor(trueDamage?power:Math.max(1,power*elMul(sp.element,e.ref.el)-enemyDefense(e)/2)));if(credit)creditExpansionAffinity(sp,damage);return damage;}
@@ -108,11 +108,13 @@ function cleanseOne(damagingOnly=false){
 }
 function currentInscription(){return typeof expeditionInscription==='function'?expeditionInscription():null;}
 function inscribedSpell(sp,inscription=currentInscription()){
+  if(Object.hasOwn(sp,'_inscribed')){if(sp._inscribed===inscription)return sp;sp=SPELLS.find(s=>s.id===sp.id)||sp;}
+  sp={...refinedSpell(sp),_inscribed:inscription};
   if(inscription==='ashglass'&&sp.id==='spark')return {...sp,burn:null,instantBurn:0.25};
   if(inscription==='brine'&&sp.id==='iceshard')return {...sp,condition:{id:'soaked',dur:6}};
   if(inscription==='redaction'&&sp.id==='souldrain')return {...sp,harvest:4,leech:0,noLeech:true};
   if(inscription==='weighted'&&sp.id==='dicefire')return {...sp,dmg:sp.dmg*0.85};
-  if(inscription==='orbital'&&sp.id==='stardustveil')return {...sp,buff:{stat:'def',amt:30+G.hero.maxHp*0.04,dur:20,_inscription:'orbital'}};
+  if(inscription==='orbital'&&sp.id==='stardustveil')return {...sp,buff:{stat:'def',amt:(30+G.hero.maxHp*0.04)*(sp._refinementPower||1),dur:20,_inscription:'orbital'}};
   if(inscription==='alphabet'&&sp.id==='manabolt'&&G.magic.lastSchool){
     const extra={fire:{burn:{ratio:0.25,dur:3}},water:{condition:{id:'chilled',dur:4}},earth:{condition:{id:'fractured',dur:6}},air:{lightning:true,reactionElement:'air'},light:{critBonus:0.15},shadow:{dot:{dps:5,dur:4}},blood:{leech:0.15},nature:{seedOnHit:true}}[G.magic.lastSchool];
     return {...sp,dmg:sp.dmg*0.8,...extra};
@@ -215,6 +217,7 @@ function expansionOriginalHit(sp,target,power,hitAmount){
   return dealt;
 }
 function castExpansionSpell(sp,target){
+  sp=refinedSpell(sp);
   if(!spellCastUseful(sp,target)||!canAffordCast(sp))return false;
   const m=G.magic,em=target?enemyMagic(target):null;
   G.hero.mana-=sp.cost;G.spellCd[sp.id]=sp.cd*Math.max(0.1,1-effectTagSum('cdMul'));bumpMastery(sp.id);
@@ -231,17 +234,17 @@ function castExpansionSpell(sp,target){
     case 'spellforge':m.forge={remaining:15,charges:3};break;
     case 'seedshot':damage=expansionOriginalHit(sp,target,power(18),(e,ratio=1,amount=power(18))=>Math.floor(Math.max(1,amount*ratio-enemyDefense(e)/2)));plantSeed(target);break;
     case 'briarpatch':em.briar={remaining:12,hits:3,power:power(24)};break;
-    case 'bloom':{const count=consumeSeeds(target);G.hero.hp=Math.min(G.hero.maxHp,G.hero.hp+G.hero.maxHp*0.06*count*masteryBonus(sp.id)*(1+effectTagSum('healMul')));if(count>=2)cleanseOne();break;}
+    case 'bloom':{const count=consumeSeeds(target);G.hero.hp=Math.min(G.hero.maxHp,G.hero.hp+G.hero.maxHp*0.06*count*masteryBonus(sp.id)*(1+effectTagSum('healMul'))*(sp._refinementPower||1));if(count>=2)cleanseOne();break;}
     case 'sporecall':em.seeds.shift();for(const e of nearbyEnemies(target,3,2))plantSeed(e);break;
     case 'orchardsprite':m.summons.sprite={remaining:12};break;
     case 'wildharvest':for(const e of [target,...nearbyEnemies(target,3,2)]){const count=consumeSeeds(e);if(count)damage+=spellSecondaryHit(sp,e,power(38)*count);}break;
     case 'unison':{const group=noteGroups().find(g=>g.length>=2);m.notes=notes.filter(n=>!group.includes(n));damage=spellSecondaryHit(sp,target,power(24*group.length)+group.reduce((s,n)=>s+n.damage,0)*0.25,true);break;}
-    case 'counterpoint':{const distinct=[];for(const n of notes)if(!distinct.some(x=>x.el===n.el))distinct.push(n);m.notes=notes.filter(n=>!distinct.includes(n));m.barrier={remaining:10,budget:G.hero.maxHp*Math.min(0.24,0.06*distinct.length)*masteryBonus(sp.id)};break;}
+    case 'counterpoint':{const distinct=[];for(const n of notes)if(!distinct.some(x=>x.el===n.el))distinct.push(n);m.notes=notes.filter(n=>!distinct.includes(n));m.barrier={remaining:10,budget:G.hero.maxHp*Math.min(0.24,0.06*distinct.length*(sp._refinementPower||1))*masteryBonus(sp.id)};break;}
     case 'quietmeasure':{const paid=notes.reduce((sum,n)=>sum+n.spent,0);G.hero.mana=Math.min(G.hero.maxMana,G.hero.mana+paid*0.35);m.notes=[];break;}
     case 'suspension':{const buff=suspensionBuff();buff.dur+=3;buff._suspended=true;m.notes.shift();break;}
     case 'clockworkchorus':m.summons.chorus={remaining:15,hits:3,power:power(35)+notes.reduce((sum,n)=>sum+n.damage,0)*0.15};m.notes=[];break;
     case 'finalcadence':{const victims=[target,...nearbyEnemies(target,3,2)],budget=power(100)+notes.reduce((sum,n)=>sum+n.damage,0)*0.3;m.notes=[];for(const e of victims)damage+=spellSecondaryHit(sp,e,budget/victims.length,true);break;}
-    case 'dicefire':{damage=expansionOriginalHit(sp,target,power(sp.dmg),(e,ratio=1,amount=power(sp.dmg))=>Math.floor(Math.max(1,amount*ratio-enemyDefense(e)/2)));const next=chaosNext();m.chaos.index++;m.chaos.attempts=0;if(next==='burning')refreshEnemyDot(target,{spellId:sp.id,element:'fire',dps:damage*0.25/4,remaining:4});else if(target.hp>0){target.statuses??={};target.statuses[next]=5;}break;}
+    case 'dicefire':{damage=expansionOriginalHit(sp,target,power(),(e,ratio=1,amount=power())=>Math.floor(Math.max(1,amount*ratio-enemyDefense(e)/2)));const next=chaosNext();m.chaos.index++;m.chaos.attempts=0;if(next==='burning')refreshEnemyDot(target,{spellId:sp.id,element:'fire',dps:damage*0.25/4,remaining:4});else if(target.hp>0){target.statuses??={};target.statuses[next]=5;}break;}
     case 'stackthedeck':m.chaos.index++;m.chaos.attempts++;break;
     case 'contradiction':{const conditions=conditionKinds(target).slice(0,2);for(const c of conditions){if(c.id==='burning')target.dotTimers=target.dotTimers.filter(d=>!isBurn(d));else delete target.statuses[c.id];}damage=spellSecondaryHit(sp,target,power(180),true);break;}
     case 'jestersdouble':m.summons.decoy={remaining:10,hits:1};break;
@@ -307,7 +310,7 @@ function getExpeditionProfile(enemy={},speedPass=0,actionRate=null){
     if(['dmgMul','goldFind','xpMul','elXpMul','ritualMul'].includes(buff.stat))s[buff.stat]/=1+buff.amt;
     else s[buff.stat]=(s[buff.stat]||0)-buff.amt;
   }
-  const power=(sp,base=sp.dmg)=>spellPower(sp,base,s),affinityPerSec={};
+  const power=(sp,base)=>spellPower(sp,base,s),affinityPerSec={};
   const cap=(value,targets=1)=>Math.min(value,(enemy.hp||1e12)*targets);
   const maxHp=G.hero.maxHp,def=Math.max(0,enemy.def||0);let attackRate=actionRate??Math.max(0.1,s.spd);
   let rawIncoming=Math.max(1,(enemy.atk||10)-s.def/2)*Math.max(0.1,enemy.spd||1);
@@ -319,7 +322,8 @@ function getExpeditionProfile(enemy={},speedPass=0,actionRate=null){
   }
   if(total>attackRate)for(const [id,rate] of rates)rates.set(id,rate*attackRate/total);
   const rate=id=>rates.get(id)||0;
-  manaRegen+=5*Math.min(1,8*rate('wellspring'));
+  const wellspring=spells.find(sp=>sp.id==='wellspring');
+  if(wellspring)manaRegen+=wellspring.buff.amt*Math.min(1,wellspring.buff.dur*rate('wellspring'));
   const targetLife=(enemy.hp||100)/(Math.max(1,s.atk-def/2)*attackRate*s.dmgMul);
   const seedRate=(rate('seedshot')+spells.filter(sp=>sp.seedOnHit).reduce((sum,sp)=>sum+rate(sp.id),0))*Math.min(1,targetLife/4),notesRate=spells.filter(sp=>sp.element!=='resonance').reduce((n,sp)=>n+rate(sp.id),0);
   const distinct=new Set(spells.filter(sp=>sp.element!=='resonance').map(sp=>sp.element)).size;
@@ -377,10 +381,10 @@ function getExpeditionProfile(enemy={},speedPass=0,actionRate=null){
       case 'hexledger':dps+=cap(Math.min(power(sp,120),rawIncoming*12*0.35))*casts*(spells.some(x=>x.element==='shadow'&&x.type==='damage')?1:0);break;
       case 'transfusion':healing-=maxHp*0.12*casts;break;
       case 'briarpatch':dps+=cap(power(sp,24))*3*casts;break;
-      case 'bloom':healing+=maxHp*0.06*Math.min(3,seedRate/Math.max(0.01,casts))*casts;break;
+      case 'bloom':healing+=maxHp*0.06*Math.min(3,seedRate/Math.max(0.01,casts))*casts*(sp._refinementPower||1);break;
       case 'wildharvest':dps+=cap(power(sp,38)*Math.min(3,seedRate/Math.max(0.01,casts)))*casts;break;
       case 'unison':dps+=cap(power(sp,60))*casts;break;
-      case 'counterpoint':prevented+=maxHp*Math.min(0.24,0.06*distinct)*casts;break;
+      case 'counterpoint':prevented+=maxHp*Math.min(0.24,0.06*distinct*(sp._refinementPower||1))*casts;break;
       case 'clockworkchorus':dps+=cap(power(sp,35))*3*casts;break;
       case 'finalcadence':dps+=cap(power(sp,100),enemy.isBoss?1:3)*casts;break;
       case 'dicefire':conditions.add('soaked');conditions.add('chilled');dps+=hit*0.25*casts/3;break;

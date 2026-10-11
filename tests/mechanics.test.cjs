@@ -48,11 +48,12 @@ function game(seed = 12345) {
   assert.notEqual(source, script, 'expected a single removable browser boot call');
   vm.runInContext(source, sandbox, { timeout: 5000 });
   const run = source => vm.runInContext(source, sandbox, { timeout: 10000 });
-  run('renderHot=()=>{}; renderCold=()=>{}; renderAll=()=>{}; recomputeStats();');
+  run('gameRandom=()=>Math.random();renderHot=()=>{}; renderCold=()=>{}; renderAll=()=>{}; recomputeStats();');
   return { run, node, advanceTime: milliseconds => { now += milliseconds; } };
 }
 
 test('the game remains one self-contained document with explicit save control', () => {
+  assert.ok(Buffer.byteLength(html)<=500*1024,'the complete release remains within its 500 KiB budget');
   assert.doesNotMatch(html, /<(?:script|link)\b[^>]*(?:src|href)\s*=\s*["']https?:/i);
   assert.doesNotMatch(script, /\b(?:localStorage|sessionStorage|indexedDB)\s*[.(]/);
   assert.doesNotMatch(script, /\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(/);
@@ -198,7 +199,7 @@ test('retained spells in locked slots neither cast nor grant passive effects', (
 
 test('a defensive spell protects against a hit on the same simulation step', () => {
   const { run } = game();
-  run(`Math.random=()=>0.5;G.equippedSpells=['earthward'];
+  run(`Math.random=()=>0.5;G.knownSpells.push('earthward');G.equippedSpells=['earthward'];
     G.enemy={hp:1000,ref:{atk:10,def:0,spd:1,name:'Training target'},dotTimers:[],slowed:0};
     G.heroAtkCd=0;G.enemyAtkCd=0;combatTick();`);
   assert.ok(run('G.baseStats.def') >= 13);
@@ -287,7 +288,7 @@ test('Tempest grants its speed buff and repeated DoTs refresh without multiplyin
     const target={hp:100000,ref:{def:0,el:'fire'},dotTimers:[]};
     castSpell(SPELLS.find(s=>s.id==='tempest'),target);`);
   assert.ok(run('G.baseStats.spd') > 1);
-  run(`castSpell(SPELLS.find(s=>s.id==='curse'),target);
+  run(`G.hero.mana=10000;castSpell(SPELLS.find(s=>s.id==='curse'),target);
     castSpell(SPELLS.find(s=>s.id==='curse'),target);`);
   assert.equal(run('target.dotTimers.length'), 1);
   run(`castSpell(SPELLS.find(s=>s.id==='hemorrhage'),target);`);

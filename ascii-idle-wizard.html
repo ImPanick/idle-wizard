@@ -673,6 +673,8 @@ kbd{font-size:10px;padding:2px 4px}
 .detail-fold[open]>summary::before{content:'- '}
 .detail-fold>summary::-webkit-details-marker{display:none}
 .utility-fold>summary{list-style:none;cursor:pointer}
+#bulk-sale{margin:8px 0;padding:8px;border:1px solid var(--border)}
+#bulk-sale summary{margin-bottom:6px}
 .utility-fold>summary::-webkit-details-marker{display:none}
 .utility-fold>summary h2{border:0;padding:0;margin:0}
 .utility-fold[open]>summary h2{border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:12px}
@@ -1020,6 +1022,16 @@ button,select,summary,.el-group-header,.auto-cfg{min-height:44px!important}butto
             <option value="alpha">Name (A -> Z)</option>
           </select>
         </div>
+        <details id="bulk-sale" class="utility-fold">
+          <summary class="title">Sell in bulk</summary>
+          <div class="row">
+            <label class="sub">Category <select class="act" id="sell-slot"></select></label>
+            <label class="sub">Rarity <select class="act" id="sell-rarity"></select></label>
+            <label class="sub">Tier <select class="act" id="sell-tier"></select></label>
+          </div>
+          <p class="sub">Equipped gear and crafted uniques are kept. Socketed gems return to your collection.</p>
+          <div class="row"><span id="bulk-sale-preview" class="sub" role="status"></span><button id="btn-bulk-sell" class="act warn">Review sale</button><button id="cancel-bulk-sell" class="act" hidden>Cancel</button></div>
+        </details>
         <ul class="shop" id="inventory-list"></ul>
       </div>
       <details class="panel utility-fold">
@@ -3928,8 +3940,60 @@ function sellGear(itemId){
   const item=G.gearInventory[idx];
   const gold=gearSellPrice(item);
   earnGold(gold);
+  refundGearGems(item);
   G.gearInventory.splice(idx,1);
   logLine(`Sold ${item.name} for ${fmtG(gold)}`,'sys');
+}
+function refundGearGems(item){
+  let count=0;
+  for(const s of item.sockets)if(s){const id=gemId(s.type,s.level);G.gemInventory[id]=(G.gemInventory[id]||0)+1;count++;}
+  return count;
+}
+function bulkSalePreview(f){
+  const empty={items:[],gold:0};
+  if(!f||!(f.slot==='all'||GEAR_SLOTS.includes(f.slot))||!(f.rarity==='all'||RARITY_ORDER.includes(f.rarity))
+    ||!(f.tier==='all'||Number.isInteger(f.tier)&&f.tier>=0&&f.tier<=5))return empty;
+  const equipped=new Set(Object.values(G.gear).filter(Boolean).map(i=>i.id));
+  const items=G.gearInventory.filter(i=>!i.legendary&&!equipped.has(i.id)&&(f.slot==='all'||i.slot===f.slot)
+    &&(f.rarity==='all'||i.rarity===f.rarity)&&(f.tier==='all'||i.tier===f.tier));
+  return {items,gold:items.reduce((n,i)=>n+gearSellPrice(i),0)};
+}
+function bulkSellGear(f,reviewedIds=null){
+  const ids=reviewedIds===null?null:new Set(Array.isArray(reviewedIds)?reviewedIds:[]);
+  const items=bulkSalePreview(f).items.filter(i=>!ids||ids.has(i.id));
+  const result={count:items.length,gold:0,gems:0};
+  if(!items.length)return result;
+  const sold=new Set(items.map(i=>i.id));
+  for(const i of items){result.gold+=gearSellPrice(i);result.gems+=refundGearGems(i);}
+  G.gearInventory=G.gearInventory.filter(i=>!sold.has(i.id));earnGold(result.gold);
+  logLine(`Sold ${result.count} gear for ${fmtG(result.gold)} | ${result.gems} socketed gems returned.`,'sys');
+  return result;
+}
+let _bulkSaleReview=null;
+function cancelBulkSale(){_bulkSaleReview=null;renderBulkSale();}
+function bulkSaleFilter(){return {slot:$('sell-slot').value,rarity:$('sell-rarity').value,tier:$('sell-tier').value==='all'?'all':Number($('sell-tier').value)};}
+function renderBulkSale(){
+  const p=_bulkSaleReview||bulkSalePreview(bulkSaleFilter());
+  $('bulk-sale-preview').textContent=`${p.items.length} matching items | ${fmtG(p.gold)}`+(_bulkSaleReview?` | ${p.scope}. Confirm to sell permanently.`:'');
+  $('btn-bulk-sell').disabled=!p.items.length;$('btn-bulk-sell').textContent=_bulkSaleReview?'Confirm sale':'Review sale';
+  $('cancel-bulk-sell').hidden=!_bulkSaleReview;
+}
+function bindBulkSale(){
+  for(const [id,values] of [['slot',GEAR_SLOTS],['rarity',RARITY_ORDER],['tier',[0,1,2,3,4,5]]]){
+    const select=$('sell-'+id);
+    select.innerHTML=`<option value="all">All ${id==='slot'?'categories':id==='tier'?'tiers':'rarities'}</option>`+values.map(v=>`<option value="${v}">${id==='rarity'?RARITIES[v].label:id==='tier'?'T'+v:v[0].toUpperCase()+v.slice(1)}</option>`).join('');
+    select.onchange=cancelBulkSale;
+  }
+  $('sell-rarity').value='common';
+  $('btn-bulk-sell').onclick=()=>{
+    if(_bulkSaleReview){const p=_bulkSaleReview;_bulkSaleReview=null;bulkSellGear(p.filter,p.items.map(i=>i.id));renderGear();renderTop();return;}
+    const f=bulkSaleFilter(),p=bulkSalePreview(f);
+    if(!p.items.length)return;
+    const scope=['slot','rarity','tier'].map(id=>$('sell-'+id).selectedOptions[0].textContent).join(' / ');
+    _bulkSaleReview={...p,filter:f,scope};renderBulkSale();
+  };
+  $('cancel-bulk-sell').onclick=cancelBulkSale;
+  renderBulkSale();
 }
 function salvageGear(itemId){
   const idx=G.gearInventory.findIndex(i=>i.id===itemId);
@@ -3945,12 +4009,7 @@ function salvageGear(itemId){
   G.materials.crystal+=crystal;
   G.materials.gem+=gem;
   // Refund any sockets (gems return to inventory)
-  for(const s of item.sockets){
-    if(s){
-      const id=gemId(s.type,s.level);
-      G.gemInventory[id]=(G.gemInventory[id]||0)+1;
-    }
-  }
+  refundGearGems(item);
   G.gearInventory.splice(idx,1);
   let str=`Salvaged ${item.name}: +${dust} dust`;
   if(crystal)str+=`, +${crystal} crystal`;
@@ -5061,7 +5120,7 @@ function importSave(str){
     _tickAccumulator=save.clockDebt-debt;
     if(save.legacy)logLine(`Pre-v5 save (v${save.version}): old wardrobe, gems and legendaries reset; other progress preserved.`,'sys');
     if(save.version<27)logLine('Progress migrated to the new level curve; your level and next-level progress are preserved.','sys');
-    logLine('Save imported.','sys');
+    cancelBulkSale();logLine('Save imported.','sys');
     clearOfflineGains();
     showOfflineGains(summary);
     return true;
@@ -5993,11 +6052,7 @@ function renderGear(){
   $('treasure-maps-row').innerHTML=tm;
   if($('btn-use-map'))$('btn-use-map').onclick=()=>{useTreasureMap();renderGear();renderTop();renderMap();};
 
-  // Inventory -- always grouped by slot (the primary category). The sort
-  // dropdown controls ordering WITHIN each slot. Container .shop has
-  // max-height:520px;overflow-y:auto so the list never hyper-extends the
-  // page. data-cmp-id on each <li> drives the hover comparison tooltip
-  // wired up in bindEvents().
+  // Inventory groups are folded by slot; sorting stays within each group.
   $('inv-summary').textContent=`${G.gearInventory.length} / ${typeof GEAR_CAPACITY==='number'?GEAR_CAPACITY:5000} items`;
   const VALID_INV_SORTS=['rarity','strength','alpha'];
   const sortMode=VALID_INV_SORTS.includes(G.uiInvSort)?G.uiInvSort:'rarity';
@@ -6040,12 +6095,12 @@ function renderGear(){
       const topRarity=[...list].sort((a,b)=>RARITY_ORDER.indexOf(b.rarity)-RARITY_ORDER.indexOf(a.rarity))[0].rarity;
       const topR=RARITIES[topRarity];
       inv+=`<li class="el-group">
-        <div class="el-group-header" data-toggle-inv="${slot}">
+        <div class="row" style="flex-wrap:nowrap"><div class="el-group-header" data-toggle-inv="${slot}" style="flex:1;min-width:0">
           <span style="color:var(--hi);font-weight:700;text-transform:capitalize">${slot}</span>
           <span style="color:var(--${topR.color});font-size:11px">best: ${topR.label}</span>
           <span class="count">${list.length} item${list.length>1?'s':''} | ${asciiHTML(eqLabel)}</span>
           <span class="toggle">${collapsed?'+':'-'}</span>
-        </div>
+        </div><button class="warn" data-bulk-slot="${slot}" aria-label="Bulk sell ${slot} gear">Bulk sell</button></div>
         ${collapsed?'':`<ul class="el-group-body" style="list-style:none;margin:0;padding:4px 8px">${sorted.map(invItemHTML).join('')}</ul>`}
       </li>`;
     }
@@ -6059,6 +6114,7 @@ function renderGear(){
     };
   });
   $('inventory-list').querySelectorAll('button').forEach(b=>{
+    if(b.dataset.bulkSlot)b.onclick=e=>{e.stopPropagation();$('sell-slot').value=b.dataset.bulkSlot;$('bulk-sale').open=true;cancelBulkSale();$('sell-rarity').focus();};
     if(b.dataset.equipId)b.onclick=()=>{equipFromInventory(b.dataset.equipId);renderGear();renderHero();renderTop();};
     if(b.dataset.sellId)b.onclick=()=>{sellGear(b.dataset.sellId);renderGear();renderTop();};
     if(b.dataset.salvId)b.onclick=()=>{salvageGear(b.dataset.salvId);renderGear();renderTop();};
@@ -6068,6 +6124,7 @@ function renderGear(){
       openSocketModal(item);
     };
   });
+  renderBulkSale();
 }
 // Manor categories -- grouping by purpose so the tab reads at a glance.
 // Building IDs are stable, so a static map is the simplest mapping.
@@ -6903,7 +6960,7 @@ function enhanceDisclosures(){
   document.querySelectorAll('.el-group-header').forEach(header=>{
     header.setAttribute('role','button');
     header.tabIndex=0;
-    header.setAttribute('aria-expanded',String(!!header.nextElementSibling));
+    header.setAttribute('aria-expanded',String(header.dataset.toggleInv?G.uiCollapsed['inv:'+header.dataset.toggleInv]===false:!!header.nextElementSibling));
   });
 }
 function renderHot(){
@@ -7063,10 +7120,7 @@ function gameTick(){
   renderOfflineGains();
 }
 
-// Cold-render pause guard. When the user mousedowns/touches on any interactive
-// control, suspend cold renders for ~1s so the click event has a stable target
-// to land on. Hot path (top/log/map/hero) keeps updating -- no contention since
-// it touches no clickable elements.
+// Pause cold renders during interaction so buttons stay stable. Live bars update.
 let _renderPause=0;
 function _markInteract(e){
   if(e.target.closest('button, input, select, summary, .tab-btn, .el-group-header, .gem-pill, .gem-choice')){
@@ -7177,6 +7231,7 @@ function bindEvents(){
   $('theme-select').onchange=e=>{applyTheme(e.target.value);};
   $('inv-sort').value=G.uiInvSort||'rarity';
   $('inv-sort').onchange=e=>{G.uiInvSort=e.target.value;renderGear();};
+  bindBulkSale();
   window.addEventListener('keydown',e=>{
     const tag=document.activeElement&&document.activeElement.tagName;
     if(tag==='TEXTAREA'||tag==='INPUT'||tag==='SELECT'||document.activeElement?.isContentEditable

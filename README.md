@@ -66,6 +66,11 @@ Field notes show your next milestones, current encounter, recent earning and
 damage rates, and the adventure chronicle. Export and import stay at the top.
 Appearance and density controls live under **Settings**.
 
+Equipment's **Sell in bulk** controls filter by category, exact rarity, and exact
+tier, including all categories at once. Each category also has a bulk shortcut.
+Review the count and gold value, then confirm one sale. Equipped gear and crafted
+uniques are kept; socketed gems return to your collection, including single sales.
+
 There are **7 palettes**: Field Grimoire, Midnight Grimoire (default), Dark Forest,
 Light Warm, Light Blue, Amber CRT, and High Contrast. Your exported save includes
 the selected palette and density. Reduced motion follows your system preference.
